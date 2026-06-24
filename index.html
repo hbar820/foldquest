@@ -1,0 +1,1762 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FoldQuest — Aprenda AlphaFold</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg-soft: #161b22;
+    --bg-card: #1c2230;
+    --border: #2b3242;
+    --text: #e6edf3;
+    --text-dim: #9aa7b8;
+    --accent: #4f8cff;
+    --accent-2: #7c5cff;
+    --good: #3fb950;
+    --bad: #f85149;
+    --warn: #d29922;
+    --gold: #e3b341;
+    --radius: 14px;
+    --shadow: 0 8px 30px rgba(0,0,0,.35);
+  }
+  [data-theme="light"] {
+    --bg: #f4f6fb;
+    --bg-soft: #ffffff;
+    --bg-card: #ffffff;
+    --border: #dce1ea;
+    --text: #1a2030;
+    --text-dim: #5a6678;
+    --shadow: 0 8px 30px rgba(40,60,100,.10);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); }
+  button { font-family: inherit; cursor: pointer; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 16px 80px; }
+
+  /* Top bar */
+  header.bar {
+    position: sticky; top: 0; z-index: 50;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  .bar-inner {
+    max-width: 880px; margin: 0 auto; padding: 10px 16px;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  .logo { font-weight: 800; font-size: 18px; letter-spacing: .3px; display: flex; align-items: center; gap: 8px; }
+  .logo .dot { width: 12px; height: 12px; border-radius: 4px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+  .spacer { flex: 1; }
+  .stat { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-dim); font-weight: 600; }
+  .stat b { color: var(--text); }
+  .pill {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 700;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .icon-btn {
+    background: var(--bg-card); border: 1px solid var(--border); color: var(--text);
+    border-radius: 10px; padding: 7px 10px; font-size: 14px;
+  }
+
+  /* XP bar */
+  .xpbar { height: 6px; background: var(--border); border-radius: 999px; overflow: hidden; }
+  .xpbar > div { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width .5s ease; }
+
+  /* Hero */
+  .hero { padding: 28px 0 6px; }
+  .hero h1 { font-size: 30px; margin: 0 0 6px; }
+  .hero p { color: var(--text-dim); margin: 0; }
+
+  /* Cards / modules */
+  .grid { display: grid; gap: 16px; margin-top: 20px; }
+  .module {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px 18px; box-shadow: var(--shadow);
+    position: relative; overflow: hidden;
+  }
+  .module.locked { opacity: .55; }
+  .module .m-head { display: flex; align-items: center; gap: 12px; }
+  .m-num {
+    width: 40px; height: 40px; border-radius: 12px; flex: 0 0 auto;
+    display: grid; place-items: center; font-weight: 800; font-size: 16px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff;
+  }
+  .module.locked .m-num { background: var(--border); color: var(--text-dim); }
+  .m-title { font-weight: 700; font-size: 17px; margin: 0; }
+  .m-sub { color: var(--text-dim); font-size: 13px; margin: 2px 0 0; }
+  .m-prog { margin-top: 14px; }
+  .m-prog .xpbar { margin-top: 6px; }
+  .m-meta { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-dim); }
+  .badge-soon { position: absolute; top: 14px; right: 14px; font-size: 11px; color: var(--text-dim);
+    border: 1px solid var(--border); border-radius: 999px; padding: 2px 9px; }
+  .btn {
+    border: none; border-radius: 10px; padding: 10px 18px; font-weight: 700; font-size: 14px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff;
+  }
+  .btn.ghost { background: var(--bg-soft); color: var(--text); border: 1px solid var(--border); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+
+  /* Review banner */
+  .review-banner {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 22%, var(--bg-card)), var(--bg-card));
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px 18px; display: flex; align-items: center; gap: 14px; box-shadow: var(--shadow);
+  }
+  .review-banner .big { font-size: 26px; font-weight: 800; }
+
+  /* Lesson / exercise view */
+  .panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 22px; box-shadow: var(--shadow); }
+  .crumbs { font-size: 13px; color: var(--text-dim); margin: 18px 0 12px; display: flex; align-items: center; gap: 8px; }
+  .crumbs a { cursor: pointer; }
+  .lesson h2 { margin-top: 0; }
+  .lesson h3 { margin: 22px 0 8px; font-size: 18px; }
+  .lesson p { color: var(--text); }
+  .lesson ul { padding-left: 20px; }
+  .lesson li { margin: 4px 0; }
+  .analogy {
+    border-left: 3px solid var(--accent-2); background: var(--bg-soft);
+    padding: 10px 14px; border-radius: 8px; margin: 14px 0; font-size: 14px;
+  }
+  .analogy b { color: var(--accent-2); }
+  .keyword { color: var(--accent); font-weight: 600; }
+  .figure { margin: 18px 0; text-align: center; }
+  .figure svg { max-width: 100%; height: auto; }
+  .figcap { font-size: 12px; color: var(--text-dim); margin-top: 6px; }
+
+  /* progress dots within a module run */
+  .runbar { display: flex; gap: 6px; margin: 16px 0 20px; }
+  .runbar .seg { height: 6px; flex: 1; border-radius: 999px; background: var(--border); }
+  .runbar .seg.done { background: var(--good); }
+  .runbar .seg.cur { background: var(--accent); }
+
+  /* Quiz */
+  .q-text { font-size: 18px; font-weight: 600; margin: 4px 0 18px; }
+  .opt {
+    display: block; width: 100%; text-align: left; margin: 8px 0; padding: 13px 15px;
+    background: var(--bg-soft); border: 1.5px solid var(--border); border-radius: 12px;
+    color: var(--text); font-size: 15px; transition: .15s;
+  }
+  .opt:hover:not(:disabled) { border-color: var(--accent); }
+  .opt.correct { border-color: var(--good); background: color-mix(in srgb, var(--good) 15%, var(--bg-soft)); }
+  .opt.wrong { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 15%, var(--bg-soft)); }
+  .feedback { margin-top: 16px; padding: 14px; border-radius: 12px; font-size: 14px; display: none; }
+  .feedback.show { display: block; }
+  .feedback.ok { background: color-mix(in srgb, var(--good) 14%, var(--bg-card)); border: 1px solid var(--good); }
+  .feedback.no { background: color-mix(in srgb, var(--bad) 14%, var(--bg-card)); border: 1px solid var(--bad); }
+  .feedback b { display: block; margin-bottom: 4px; }
+
+  /* Fill blank */
+  .fill input {
+    background: var(--bg-soft); border: 1.5px solid var(--border); color: var(--text);
+    border-radius: 10px; padding: 11px 14px; font-size: 16px; width: 100%; margin: 6px 0 4px;
+  }
+  .fill input:focus { outline: none; border-color: var(--accent); }
+  .hint { font-size: 12px; color: var(--text-dim); }
+
+  /* Order / drag */
+  .order-list { list-style: none; padding: 0; margin: 10px 0; }
+  .order-item {
+    background: var(--bg-soft); border: 1.5px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; margin: 8px 0; display: flex; align-items: center; gap: 12px; cursor: grab;
+    user-select: none;
+  }
+  .order-item.dragging { opacity: .4; }
+  .order-item .grip { color: var(--text-dim); font-size: 18px; }
+  .order-item .num { width: 24px; height: 24px; border-radius: 7px; background: var(--bg-card);
+    display: grid; place-items: center; font-size: 12px; font-weight: 700; color: var(--text-dim); }
+
+  /* Elaboration */
+  textarea.elab {
+    width: 100%; min-height: 110px; background: var(--bg-soft); border: 1.5px solid var(--border);
+    color: var(--text); border-radius: 12px; padding: 13px; font-size: 15px; font-family: inherit; resize: vertical;
+  }
+  textarea.elab:focus { outline: none; border-color: var(--accent); }
+  .model-answer { margin-top: 14px; background: var(--bg-soft); border: 1px dashed var(--border);
+    border-radius: 12px; padding: 14px; font-size: 14px; }
+
+  /* Flashcard */
+  .flash {
+    perspective: 1200px; height: 230px; margin: 10px 0 4px;
+  }
+  .flash-inner { position: relative; width: 100%; height: 100%; transition: transform .5s; transform-style: preserve-3d; }
+  .flash.flipped .flash-inner { transform: rotateY(180deg); }
+  .flash-face {
+    position: absolute; inset: 0; backface-visibility: hidden; border-radius: var(--radius);
+    border: 1.5px solid var(--border); background: var(--bg-soft); padding: 22px;
+    display: grid; place-items: center; text-align: center; font-size: 18px;
+  }
+  .flash-face.back { transform: rotateY(180deg); background: var(--bg-card); }
+  .flash-face .tag { position: absolute; top: 12px; left: 14px; font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .08em; }
+  .srs-row { display: flex; gap: 8px; margin-top: 12px; }
+  .srs-row .btn { flex: 1; }
+  .srs-again { background: var(--bad) !important; }
+  .srs-hard { background: var(--warn) !important; }
+  .srs-good { background: var(--good) !important; }
+  .srs-easy { background: var(--accent) !important; }
+
+  /* Diagram (interactive Evoformer/pipeline) */
+  .diagram { display: grid; gap: 10px; margin: 16px 0; }
+  .diag-node {
+    background: var(--bg-soft); border: 1.5px solid var(--border); border-radius: 12px;
+    padding: 12px 14px; cursor: pointer; transition: .15s;
+  }
+  .diag-node:hover { border-color: var(--accent); }
+  .diag-node.active { border-color: var(--accent-2); background: color-mix(in srgb, var(--accent-2) 12%, var(--bg-soft)); }
+  .diag-node h4 { margin: 0; font-size: 15px; }
+  .diag-node .desc { font-size: 13px; color: var(--text-dim); margin-top: 6px; display: none; }
+  .diag-node.active .desc { display: block; }
+  .diag-arrow { text-align: center; color: var(--text-dim); font-size: 18px; }
+
+  /* pLDDT interactive */
+  .plddt-demo { margin: 16px 0; }
+  .plddt-track { display: flex; height: 34px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+  .plddt-seg { flex: 1; cursor: pointer; transition: opacity .15s; }
+  .plddt-seg:hover { opacity: .8; }
+  .plddt-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; margin-top: 10px; color: var(--text-dim); }
+  .plddt-legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .plddt-legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+  .plddt-readout { margin-top: 10px; font-size: 14px; min-height: 22px; }
+
+  /* Completion */
+  .done-screen { text-align: center; padding: 30px 0; }
+  .done-screen .trophy { font-size: 64px; }
+  .done-screen h2 { margin: 8px 0; }
+  .xp-pop { color: var(--gold); font-weight: 800; font-size: 22px; }
+
+  /* Badges */
+  .badges { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+  .badge {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 10px 12px; font-size: 13px; display: flex; align-items: center; gap: 8px; min-width: 0;
+  }
+  .badge.locked { opacity: .4; }
+  .badge .ico { font-size: 20px; }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px 18px; box-shadow: var(--shadow); font-weight: 700; opacity: 0;
+    transition: .3s; z-index: 100; display: flex; align-items: center; gap: 8px;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .footnote { color: var(--text-dim); font-size: 12px; margin-top: 26px; text-align: center; }
+  .section-title { font-size: 14px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-dim); margin: 28px 0 6px; }
+
+  @media (max-width: 560px) {
+    .hero h1 { font-size: 24px; }
+    .bar-inner { gap: 8px; }
+    .stat.hide-sm { display: none; }
+  }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="bar-inner">
+    <div class="logo"><span class="dot"></span> FoldQuest</div>
+    <div class="spacer"></div>
+    <div class="stat hide-sm">🔥 <b id="s-streak">0</b></div>
+    <div class="pill" id="s-level">Nv 1</div>
+    <div class="stat">⭐ <b id="s-xp">0</b> XP</div>
+    <button class="icon-btn" id="theme-btn" title="Tema">🌙</button>
+  </div>
+</header>
+
+<div class="wrap" id="app"></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================================
+   FoldQuest — app de aprendizagem gamificado sobre AlphaFold
+   Single-file, vanilla JS, sem dependências, persiste em localStorage.
+   Técnicas: recordação ativa, repetição espaçada (SM-2), efeito de teste com
+   feedback explicativo, interleaving na revisão, scaffolding (módulos travados),
+   elaboração. Gamificação: XP, níveis, streak, badges.
+   ========================================================================= */
+
+/* ----------------------------- CONTEÚDO ---------------------------------- */
+/* Cada módulo tem "items": passos sequenciais. Tipos de item:
+   lesson | quiz | fill | order | elaborate | flashcard | diagram | plddt
+   Itens que geram cards de repetição espaçada têm um campo "srs" com {front,back}.
+*/
+
+const MODULES = [
+  {
+    id: "fundamentos",
+    title: "Fundamentos Biológicos",
+    sub: "Proteínas, aminoácidos e por que a forma define a função",
+    items: [
+      {
+        type: "lesson",
+        title: "O que é uma proteína?",
+        html: `
+          <p>Proteínas são as <span class="keyword">máquinas moleculares</span> da vida. Elas
+          digerem alimentos, transportam oxigênio, combatem infecções, copiam seu DNA e dão
+          estrutura aos seus tecidos. Quase tudo que acontece numa célula é feito por proteínas.</p>
+          <p>Cada proteína é uma cadeia de blocos menores chamados <span class="keyword">aminoácidos</span>.
+          Existem 20 tipos de aminoácidos. A ordem em que eles aparecem na cadeia é a
+          <span class="keyword">sequência</span> da proteína — também chamada de <b>estrutura primária</b>.</p>
+          <div class="figure">
+          <svg viewBox="0 0 480 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sequência de aminoácidos que se dobra numa forma 3D">
+            <line x1="24" y1="55" x2="189" y2="55" stroke="var(--border)" stroke-width="4"/>
+            <circle cx="24"  cy="55" r="13" fill="#4f8cff"/>
+            <circle cx="57"  cy="55" r="13" fill="#7c5cff"/>
+            <circle cx="90"  cy="55" r="13" fill="#3fb950"/>
+            <circle cx="123" cy="55" r="13" fill="#e3b341"/>
+            <circle cx="156" cy="55" r="13" fill="#f85149"/>
+            <circle cx="189" cy="55" r="13" fill="#4f8cff"/>
+            <text x="106" y="100" text-anchor="middle" font-size="12" fill="var(--text-dim)">sequência (estrutura primária)</text>
+            <text x="240" y="62" text-anchor="middle" font-size="26" fill="var(--text-dim)">→</text>
+            <path d="M300,55 q15,-38 35,-13 q20,25 0,40 q-18,14 5,30 q22,15 40,-10 q12,-20 32,-7"
+                  fill="none" stroke="var(--accent-2)" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="300" cy="55" r="7" fill="#4f8cff"/>
+            <circle cx="412" cy="55" r="7" fill="#4f8cff"/>
+            <text x="372" y="140" text-anchor="middle" font-size="12" fill="var(--text-dim)">forma 3D (enovelada)</text>
+          </svg>
+          <div class="figcap">A mesma cadeia de aminoácidos se dobra espontaneamente numa forma 3D específica.</div>
+          </div>
+          <div class="analogy"><b>Analogia:</b> pense nos 20 aminoácidos como um alfabeto de 20 letras.
+          Uma proteína é uma "palavra" muito longa escrita com esse alfabeto. A sequência é o gene
+          traduzido em letras.</div>
+        `
+      },
+      {
+        type: "quiz",
+        q: "Quantos tipos de aminoácidos formam as proteínas?",
+        options: ["4", "20", "64", "Centenas"],
+        answer: 1,
+        why: "São 20 aminoácidos padrão. (4 é o número de bases do DNA; 64 é o número de códons; centenas não está correto.)"
+      },
+      {
+        type: "lesson",
+        title: "Da sequência à forma 3D",
+        html: `
+          <p>A sequência (estrutura primária) não fica esticada como um colar. A cadeia
+          <span class="keyword">se dobra (enovela)</span> espontaneamente numa forma 3D específica.
+          Subimos por níveis:</p>
+          <ul>
+            <li><b>Primária:</b> a sequência de aminoácidos.</li>
+            <li><b>Secundária:</b> padrões locais repetidos — <span class="keyword">hélices-α</span>
+              (espirais) e <span class="keyword">folhas-β</span> (fitas lado a lado).</li>
+            <li><b>Terciária:</b> a forma 3D completa de uma única cadeia.</li>
+            <li><b>Quaternária:</b> várias cadeias juntas formando um complexo (ex.: a hemoglobina tem 4).</li>
+          </ul>
+          <div class="figure">
+          <svg viewBox="0 0 540 165" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Os quatro níveis de estrutura de uma proteína">
+            <line x1="135" y1="20" x2="135" y2="108" stroke="var(--border)" stroke-width="1" stroke-dasharray="3 4"/>
+            <line x1="270" y1="20" x2="270" y2="108" stroke="var(--border)" stroke-width="1" stroke-dasharray="3 4"/>
+            <line x1="405" y1="20" x2="405" y2="108" stroke="var(--border)" stroke-width="1" stroke-dasharray="3 4"/>
+            <!-- 1 Primária -->
+            <line x1="35" y1="60" x2="101" y2="60" stroke="var(--border)" stroke-width="3"/>
+            <circle cx="35" cy="60" r="9" fill="#4f8cff"/><circle cx="57" cy="60" r="9" fill="#7c5cff"/>
+            <circle cx="79" cy="60" r="9" fill="#3fb950"/><circle cx="101" cy="60" r="9" fill="#e3b341"/>
+            <text x="67" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-dim)">Primária</text>
+            <text x="67" y="144" text-anchor="middle" font-size="10" fill="var(--text-dim)">sequência</text>
+            <!-- 2 Secundária: hélice + folha -->
+            <path d="M165,30 c22,6 22,22 0,28 c-22,6 -22,22 0,28" fill="none" stroke="#3fb950" stroke-width="4" stroke-linecap="round"/>
+            <g stroke="#e3b341" stroke-width="4" fill="none" stroke-linecap="round">
+              <path d="M212,32 l0,46"/><path d="M228,32 l0,46"/>
+              <path d="M207,74 l5,8 l5,-8"/><path d="M223,74 l5,8 l5,-8"/>
+            </g>
+            <text x="202" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-dim)">Secundária</text>
+            <text x="202" y="144" text-anchor="middle" font-size="10" fill="var(--text-dim)">hélices e folhas</text>
+            <!-- 3 Terciária -->
+            <path d="M302,52 q15,-28 30,-9 q14,20 -1,34 q-15,12 8,25 q20,10 33,-12"
+                  fill="none" stroke="#4f8cff" stroke-width="4" stroke-linecap="round"/>
+            <text x="337" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-dim)">Terciária</text>
+            <text x="337" y="144" text-anchor="middle" font-size="10" fill="var(--text-dim)">forma 3D da cadeia</text>
+            <!-- 4 Quaternária -->
+            <g fill="none" stroke-width="3.5" stroke-linecap="round">
+              <path d="M435,46 q12,-18 24,-4 q10,16 -4,26" stroke="#4f8cff"/>
+              <path d="M462,42 q14,-13 24,2 q8,16 -6,24" stroke="#7c5cff"/>
+              <path d="M446,72 q12,-12 26,0 q10,14 -4,22" stroke="#3fb950"/>
+            </g>
+            <text x="472" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text-dim)">Quaternária</text>
+            <text x="472" y="144" text-anchor="middle" font-size="10" fill="var(--text-dim)">várias cadeias</text>
+          </svg>
+          <div class="figcap">A complexidade sobe do local (sequência) ao global (conjunto de cadeias).</div>
+          </div>
+          <div class="analogy"><b>Analogia:</b> a primária é a letra da música escrita; a secundária são
+          os refrões e estrofes recorrentes; a terciária é a música inteira tocada; a quaternária é
+          a banda inteira tocando junto.</div>
+        `
+      },
+      {
+        type: "order",
+        q: "Sem usar os nomes: ordene estas descrições, da estrutura mais simples à mais complexa:",
+        items: ["A sequência linear de aminoácidos, como contas num colar", "Hélices em espiral e folhas feitas de fitas lado a lado", "Uma única cadeia totalmente dobrada na sua forma 3D", "Duas ou mais cadeias unidas num mesmo complexo"],
+        why: "Da mais simples à mais complexa: sequência = primária → padrões locais (hélices/folhas) = secundária → cadeia inteira dobrada = terciária → várias cadeias juntas = quaternária."
+      },
+      {
+        type: "lesson",
+        title: "A regra de ouro: forma = função",
+        html: `
+          <p>Aqui está a ideia central de toda a biologia estrutural:</p>
+          <p style="font-size:18px"><b>A forma 3D de uma proteína determina o que ela faz.</b></p>
+          <div class="figure">
+          <svg viewBox="0 0 430 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Modelo chave-fechadura: o substrato encaixa no bolso da enzima">
+            <path d="M35,32 h125 v25 a22,22 0 0 0 0,44 v25 h-125 a16,16 0 0 1 -16,-16 v-87 a16,16 0 0 1 16,-16 z"
+                  fill="var(--bg-soft)" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round"/>
+            <text x="92" y="84" text-anchor="middle" font-size="14" fill="var(--text-dim)">enzima</text>
+            <text x="240" y="84" text-anchor="middle" font-size="24" fill="var(--text-dim)">→</text>
+            <circle cx="305" cy="79" r="21" fill="var(--accent-2)"/>
+            <text x="305" y="124" text-anchor="middle" font-size="12" fill="var(--text-dim)">substrato (alvo)</text>
+          </svg>
+          <div class="figcap">O bolso tem a forma exata para encaixar o alvo — como chave e fechadura.</div>
+          </div>
+          <p>Uma enzima tem um "bolso" com o formato exato para encaixar sua molécula-alvo, como uma
+          chave numa fechadura. Se a forma muda, a função muda — ou some. Muitas doenças
+          (Alzheimer, fibrose cística, doenças priônicas) acontecem quando proteínas se
+          <span class="keyword">dobram errado</span>.</p>
+          <p>Por isso prever a forma a partir da sequência é um dos grandes problemas da ciência —
+          e é exatamente isso que o AlphaFold faz.</p>
+        `,
+        srs: { front: "Por que a forma 3D de uma proteína é tão importante?", back: "Porque a forma determina a função — o encaixe entre a proteína e suas moléculas-alvo (modelo chave-fechadura). Dobramento errado causa perda de função e doenças." }
+      },
+      {
+        type: "fill",
+        q: "Complete: A estrutura 3D de uma proteína determina a sua ______.",
+        accept: ["funcao", "função", "funçao", "funcão"],
+        hint: "É o que a proteína faz na célula.",
+        why: "Forma define função — o princípio central que justifica prever estruturas."
+      },
+      {
+        type: "elaborate",
+        q: "Explique, com suas próprias palavras, por que conhecer a sequência de uma proteína NÃO é suficiente — também precisamos da forma 3D.",
+        model: "A sequência é só a lista de aminoácidos, mas a função depende de como a cadeia se dobra no espaço. Duas proteínas poderiam ter aminoácidos parecidos e formas diferentes, e é a forma 3D que cria os bolsos e superfícies que realizam o trabalho (catálise, ligação, transporte). Sem a forma, não dá para prever a função nem entender doenças causadas por dobramento incorreto.",
+        srs: { front: "Por que a sequência sozinha não basta para entender uma proteína?", back: "A função depende da forma 3D (bolsos, superfícies de ligação), e a forma não é óbvia só olhando a sequência. É preciso saber como a cadeia se enovela." }
+      },
+      {
+        type: "flashcard",
+        front: "O que é a 'estrutura primária' de uma proteína?",
+        back: "É a sequência linear de aminoácidos — a ordem das 'letras' que formam a cadeia."
+      }
+    ]
+  },
+
+  {
+    id: "problema",
+    title: "O Problema do Enovelamento",
+    sub: "Paradoxo de Levinthal, métodos experimentais e o desafio CASP",
+    requires: "fundamentos",
+    items: [
+      {
+        type: "lesson",
+        title: "Um problema de 50 anos",
+        html: `
+          <p>Já sabemos que a sequência determina a forma 3D — e que a forma determina a função.
+          Surge então a pergunta de ouro: dada apenas a <span class="keyword">sequência</span>,
+          conseguimos <b>prever</b> a forma 3D sem ir ao laboratório?</p>
+          <p>Por mais de <b>50 anos</b> isso foi um dos maiores problemas em aberto da biologia —
+          não por falta de tentativas, mas porque o espaço de formas possíveis é
+          <span class="keyword">gigantesco</span>.</p>
+        `
+      },
+      {
+        type: "lesson",
+        title: "O paradoxo de Levinthal",
+        html: `
+          <p>Em 1969, Cyrus Levinthal notou algo intrigante. Uma proteína de tamanho modesto pode
+          assumir um número <span class="keyword">astronômico</span> de conformações 3D —
+          mais do que átomos no universo observável.</p>
+          <p>Se ela testasse uma a uma ao acaso, levaria <b>mais tempo que a idade do universo</b>
+          para se dobrar. E, no entanto, na célula ela se dobra em
+          <b>microssegundos a milissegundos</b>.</p>
+          <p>Esse é o <b>paradoxo de Levinthal</b>: o dobramento não é uma busca aleatória — ele é
+          <span class="keyword">guiado</span> pela energia. A cadeia "desce" por um funil energético
+          até a forma mais estável (o mínimo de energia).</p>
+          <div class="figure">
+          <svg viewBox="0 0 360 195" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Funil de energia do dobramento de proteínas">
+            <path d="M30,30 L330,30 L215,155 L145,155 Z" fill="var(--bg-soft)" stroke="var(--accent)" stroke-width="2"/>
+            <circle cx="70" cy="52" r="5" fill="var(--accent-2)"/>
+            <circle cx="125" cy="46" r="5" fill="var(--accent-2)"/>
+            <circle cx="185" cy="54" r="5" fill="var(--accent-2)"/>
+            <circle cx="245" cy="48" r="5" fill="var(--accent-2)"/>
+            <circle cx="295" cy="52" r="5" fill="var(--accent-2)"/>
+            <circle cx="150" cy="92" r="5" fill="var(--accent-2)"/>
+            <circle cx="215" cy="96" r="5" fill="var(--accent-2)"/>
+            <circle cx="180" cy="150" r="8" fill="#3fb950"/>
+            <text x="180" y="20" text-anchor="middle" font-size="11" fill="var(--text-dim)">muitos estados possíveis (alta energia)</text>
+            <text x="180" y="182" text-anchor="middle" font-size="11" font-weight="700" fill="#3fb950">estrutura nativa (mínima energia)</text>
+          </svg>
+          <div class="figcap">O "funil de energia": muitos estados no topo convergem para a estrutura nativa, no fundo.</div>
+          </div>
+          <div class="analogy"><b>Analogia:</b> uma bola de gude largada num funil não testa todos os
+          pontos da parede — ela rola direto para o fundo. A física guia o caminho.</div>
+        `,
+        srs: { front: "O que diz o paradoxo de Levinthal?", back: "Uma proteína tem conformações possíveis demais para testá-las ao acaso (levaria mais que a idade do universo), mas se dobra em milissegundos. Logo, o dobramento é guiado pela energia (um funil), não aleatório." }
+      },
+      {
+        type: "quiz",
+        q: "O paradoxo de Levinthal mostra que o dobramento de proteínas...",
+        options: ["...é uma busca aleatória muito rápida", "...não pode ser aleatório — é guiado pela energia", "...é impossível de prever", "...depende só da temperatura ambiente"],
+        answer: 1,
+        why: "Como há conformações demais para testar ao acaso em tempo viável, o dobramento precisa ser guiado — a cadeia desce um funil energético até o mínimo de energia."
+      },
+      {
+        type: "lesson",
+        title: "Como medimos estruturas no laboratório",
+        html: `
+          <p>Antes do AlphaFold, a única forma de conhecer uma estrutura era determiná-la
+          experimentalmente. Três métodos principais:</p>
+          <ul>
+            <li><b>Cristalografia de raios-X:</b> a mais usada. Exige <i>cristalizar</i> a proteína
+            (difícil!) e disparar raios-X para deduzir as posições dos átomos. Alta resolução.</li>
+            <li><b>Crio-EM (criomicroscopia eletrônica):</b> congela a amostra e usa um microscópio
+            eletrônico. Ótima para complexos grandes; resolução cada vez melhor.</li>
+            <li><b>RMN (ressonância magnética nuclear):</b> estuda a proteína em solução; boa para
+            moléculas pequenas e para captar movimento/dinâmica.</li>
+          </ul>
+          <p>Todos são <span class="keyword">lentos e caros</span>: uma única estrutura pode levar
+          meses ou anos e custar muito.</p>
+        `
+      },
+      {
+        type: "quiz",
+        q: "Qual método experimental costuma exigir que a proteína seja cristalizada?",
+        options: ["RMN", "Crio-EM", "Cristalografia de raios-X", "AlphaFold"],
+        answer: 2,
+        why: "A cristalografia de raios-X depende de obter um cristal da proteína — etapa frequentemente difícil e demorada. (AlphaFold não é um método experimental.)"
+      },
+      {
+        type: "lesson",
+        title: "O abismo sequência × estrutura",
+        html: `
+          <p>Sequenciar DNA ficou barato e rápido: conhecemos <b>centenas de milhões</b> de sequências
+          de proteínas. Mas resolver estruturas é lento — após décadas de trabalho, tínhamos cerca de
+          <b>200 mil</b> estruturas experimentais.</p>
+          <p>O resultado é um <span class="keyword">abismo</span>: para a esmagadora maioria das
+          proteínas conhecidas, nunca tínhamos visto a forma. É esse vácuo que a previsão
+          computacional promete preencher.</p>
+          <div class="figure">
+          <svg viewBox="0 0 360 180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sequências conhecidas versus estruturas resolvidas">
+            <line x1="40" y1="150" x2="330" y2="150" stroke="var(--border)" stroke-width="2"/>
+            <rect x="80" y="28" width="70" height="122" rx="4" fill="var(--accent)"/>
+            <text x="115" y="22" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text)">~200 mi</text>
+            <text x="115" y="168" text-anchor="middle" font-size="11" fill="var(--text-dim)">sequências</text>
+            <rect x="220" y="145" width="70" height="5" rx="2" fill="var(--accent-2)"/>
+            <text x="255" y="135" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text)">~0,2 mi</text>
+            <text x="255" y="168" text-anchor="middle" font-size="11" fill="var(--text-dim)">estruturas</text>
+          </svg>
+          <div class="figcap">Sabíamos a sequência de centenas de milhões de proteínas, mas a estrutura de pouquíssimas.</div>
+          </div>
+        `,
+        srs: { front: "Por que havia um 'abismo' entre sequências e estruturas conhecidas?", back: "Sequenciar é barato e rápido (centenas de milhões de sequências), mas resolver estruturas é lento e caro (~200 mil). A maioria das proteínas nunca teve a forma determinada." }
+      },
+      {
+        type: "fill",
+        q: "Complete: a cristalografia de raios-X precisa primeiro ______ a proteína.",
+        accept: ["cristalizar"],
+        hint: "Tem a ver com o nome do método.",
+        why: "É preciso formar um cristal da proteína — etapa que muitas vezes é o maior gargalo do método."
+      },
+      {
+        type: "lesson",
+        title: "CASP: a 'olimpíada' da previsão",
+        html: `
+          <p>Para medir o progresso de forma justa, a comunidade criou o <span class="keyword">CASP</span>
+          (Critical Assessment of Structure Prediction), realizado a cada dois anos desde 1994.</p>
+          <p>Funciona como uma competição às cegas: os organizadores fornecem sequências de proteínas
+          cuja estrutura <b>já foi resolvida experimentalmente, mas ainda não publicada</b>. As equipes
+          enviam previsões, que são comparadas com a verdade. A nota principal é o <b>GDT</b>
+          (quão perto a previsão chega da estrutura real, de 0 a 100).</p>
+          <p>Por anos o progresso foi lento — até que, no <b>CASP14 (2020)</b>, o AlphaFold 2 atingiu
+          notas próximas das experimentais. E o jogo mudou.</p>
+        `,
+        srs: { front: "O que é o CASP?", back: "Uma competição às cegas, a cada 2 anos desde 1994, que avalia métodos de previsão comparando previsões com estruturas reais ainda não publicadas (métrica GDT, 0–100)." }
+      },
+      {
+        type: "order",
+        q: "Ordene como funciona uma rodada do CASP:",
+        items: ["Organizadores divulgam sequências de estruturas ainda não publicadas", "As equipes enviam suas previsões 3D", "As estruturas experimentais reais são reveladas", "As previsões são comparadas e recebem uma nota (GDT)"],
+        why: "É um teste às cegas: prevê-se antes de conhecer a resposta; só depois a estrutura real é revelada e as notas são calculadas."
+      },
+      {
+        type: "quiz",
+        q: "Em que edição do CASP o AlphaFold 2 alcançou precisão próxima da experimental?",
+        options: ["CASP10 (2012)", "CASP13 (2018)", "CASP14 (2020)", "CASP16 (2024)"],
+        answer: 2,
+        why: "Foi no CASP14, em 2020. (No CASP13, em 2018, o AlphaFold 1 já havia vencido — mas sem chegar à precisão experimental.)"
+      },
+      {
+        type: "elaborate",
+        q: "Com suas palavras: por que prever a estrutura a partir da sequência é tão difícil — e por que vale tanto a pena resolver isso?",
+        model: "É difícil porque o número de formas 3D possíveis é astronômico (paradoxo de Levinthal) e os métodos experimentais para descobrir a forma real são lentos e caros. Vale a pena porque conhecemos centenas de milhões de sequências mas pouquíssimas estruturas; prever a forma rapidamente preenche esse abismo e acelera medicina, design de enzimas e biologia básica.",
+        srs: { front: "Resuma por que prever estrutura é difícil e importante.", back: "Difícil: espaço de conformações astronômico (Levinthal) + métodos experimentais lentos e caros. Importante: enorme abismo entre sequências conhecidas e estruturas resolvidas, que a previsão preenche." }
+      },
+      {
+        type: "flashcard",
+        front: "O que mede a nota GDT no CASP?",
+        back: "O quão próxima a estrutura prevista está da estrutura experimental real (0 a 100; quanto maior, melhor)."
+      }
+    ]
+  },
+
+  {
+    id: "af1",
+    title: "AlphaFold 1",
+    sub: "O ponto de partida e o contexto histórico (CASP13)",
+    requires: "problema",
+    items: [
+      {
+        type: "lesson",
+        title: "A primeira virada (2018)",
+        html: `
+          <p>No <span class="keyword">CASP13, em 2018</span>, a DeepMind apresentou o
+          <b>AlphaFold 1</b>. Ele venceu a competição com folga e mostrou que
+          <span class="keyword">aprendizado profundo</span> (deep learning) podia dar um salto real
+          na previsão de estruturas.</p>
+          <p>Mas atenção: ele <b>ainda não</b> atingia a precisão de um experimento. Foi o aviso de
+          que algo grande estava a caminho — não a solução final.</p>
+        `
+      },
+      {
+        type: "lesson",
+        title: "A ideia central: prever distâncias",
+        html: `
+          <p>Em vez de tentar adivinhar as coordenadas 3D diretamente, o AlphaFold 1 fez algo mais
+          esperto: previu, para <span class="keyword">cada par</span> de aminoácidos, a
+          <b>distância provável</b> entre eles. Esse mapa de distâncias é o
+          <span class="keyword">distograma</span>.</p>
+          <p>Assim como o AF2 faria depois, ele usou um <b>MSA</b> (muitas sequências relacionadas)
+          para captar sinais de coevolução e estimar quem está perto de quem.</p>
+          <div class="figure">
+          <svg viewBox="0 0 320 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mapa de contatos (distograma)">
+            <rect x="70" y="20" width="160" height="160" fill="var(--bg-soft)" stroke="var(--border)" stroke-width="2"/>
+            <line x1="70" y1="20" x2="230" y2="180" stroke="var(--accent)" stroke-width="7" opacity="0.5"/>
+            <circle cx="118" cy="132" r="11" fill="var(--accent-2)"/>
+            <circle cx="158" cy="92" r="11" fill="var(--accent-2)"/>
+            <circle cx="98" cy="150" r="8" fill="var(--accent-2)" opacity="0.7"/>
+            <circle cx="140" cy="108" r="8" fill="var(--accent-2)" opacity="0.7"/>
+            <text x="150" y="200" text-anchor="middle" font-size="11" fill="var(--text-dim)">resíduo j</text>
+            <text x="40" y="100" text-anchor="middle" font-size="11" fill="var(--text-dim)" transform="rotate(-90 40 100)">resíduo i</text>
+          </svg>
+          <div class="figcap">O distograma: para cada par (i, j), a distância prevista. A diagonal é cada resíduo consigo; os pontos fora dela são contatos.</div>
+          </div>
+        `,
+        srs: { front: "O que o AlphaFold 1 previa, em vez das coordenadas 3D diretas?", back: "Um 'distograma': a distribuição de distâncias prováveis entre cada par de aminoácidos (mapa de contatos), a partir do MSA e da coevolução." }
+      },
+      {
+        type: "quiz",
+        q: "O que é o 'distograma' previsto pelo AlphaFold 1?",
+        options: ["A sequência de DNA da proteína", "Um mapa das distâncias prováveis entre cada par de aminoácidos", "A temperatura de cada átomo", "A função biológica da proteína"],
+        answer: 1,
+        why: "O distograma estima a distância entre cada par de resíduos — uma forma de descrever a forma 3D indiretamente, sem dar as coordenadas direto."
+      },
+      {
+        type: "lesson",
+        title: "De distâncias a uma forma 3D",
+        html: `
+          <p>Tendo o distograma, faltava montar a estrutura 3D real que <b>melhor satisfaz</b> todas
+          aquelas distâncias previstas. O AlphaFold 1 fazia isso com
+          <span class="keyword">otimização por gradiente</span>: partia de uma forma qualquer e a
+          ajustava aos poucos até encaixar nas distâncias.</p>
+          <div class="analogy"><b>Analogia:</b> é como montar uma barraca puxando as estacas até que
+          todas as cordas fiquem com o comprimento certo.</div>
+        `
+      },
+      {
+        type: "diagram",
+        q: "O pipeline do AlphaFold 1 — clique em cada etapa:",
+        nodes: [
+          { h: "1. Sequência + MSA", d: "A sequência de entrada e um alinhamento de sequências relacionadas (coevolução)." },
+          { h: "2. Rede neural → distograma", d: "Uma rede convolucional profunda prevê a distância provável entre cada par de aminoácidos, além de ângulos." },
+          { h: "3. Otimização por gradiente", d: "Constrói-se a estrutura 3D que melhor satisfaz as distâncias previstas, ajustando-a passo a passo." },
+          { h: "4. Estrutura 3D prevista", d: "O modelo final — bom o bastante para vencer o CASP13, mas ainda abaixo da precisão experimental." }
+        ]
+      },
+      {
+        type: "order",
+        q: "Ordene as etapas do AlphaFold 1:",
+        items: ["Reunir a sequência e o MSA", "Prever o distograma (distâncias entre pares)", "Otimizar uma estrutura 3D que satisfaça as distâncias", "Obter o modelo 3D final"],
+        why: "Sequência/MSA → distograma → otimização por gradiente → estrutura final. As distâncias vêm antes da forma 3D."
+      },
+      {
+        type: "lesson",
+        title: "Por que veio o AlphaFold 2",
+        html: `
+          <p>O AlphaFold 1 era um pipeline em <span class="keyword">etapas separadas</span>: primeiro
+          prever distâncias, depois otimizar a forma. Funcionava, mas perdia informação entre as
+          etapas e não chegava à precisão experimental.</p>
+          <p>O <b>AlphaFold 2</b> repensou tudo como um único sistema <span class="keyword">ponta a
+          ponta</span> (end-to-end): o Evoformer e o Structure Module passaram a raciocinar juntos,
+          gerando a estrutura diretamente — e impondo consistência geométrica (atenção triangular).
+          Foi isso que levou ao salto de 2020.</p>
+        `,
+        srs: { front: "Qual a principal diferença de arquitetura entre AlphaFold 1 e 2?", back: "O AF1 era em etapas separadas (prever distograma → otimizar forma). O AF2 é ponta a ponta (end-to-end): Evoformer + Structure Module raciocinam juntos e geram a 3D diretamente, com atenção triangular." }
+      },
+      {
+        type: "quiz",
+        q: "Qual avanço-chave o AlphaFold 2 trouxe em relação ao AlphaFold 1?",
+        options: ["Parou de usar MSA", "Passou a ser um sistema ponta a ponta (end-to-end) com atenção", "Passou a usar cristalografia", "Ficou mais lento e menos preciso"],
+        answer: 1,
+        why: "O AF2 unificou as etapas num modelo end-to-end baseado em atenção (Evoformer + Structure Module), atingindo precisão próxima da experimental."
+      },
+      {
+        type: "elaborate",
+        q: "Explique, com suas palavras: por que prever distâncias entre pares é mais fácil do que prever as coordenadas 3D diretamente?",
+        model: "Prever as coordenadas 3D exatas de cada átomo de uma vez é muito difícil, pois depende de um referencial global e de tudo ao mesmo tempo. Já a distância entre pares de resíduos é um problema mais local e relativo — e o MSA dá pistas de coevolução sobre quem está perto de quem. Com muitas distâncias previstas, dá para reconstruir a forma 3D que melhor as satisfaz, via otimização.",
+        srs: { front: "Por que prever distâncias entre pares é mais fácil que prever coordenadas 3D diretas?", back: "Distâncias são relativas e locais (e o MSA dá pistas de coevolução), enquanto coordenadas exigem um referencial global e tudo de uma vez. Com as distâncias, reconstrói-se a forma por otimização." }
+      },
+      {
+        type: "flashcard",
+        front: "Em uma frase: qual foi a importância do AlphaFold 1?",
+        back: "Provou que deep learning podia dar um salto na previsão de estruturas (venceu o CASP13/2018), abrindo caminho para o AlphaFold 2 — embora ainda não atingisse a precisão experimental."
+      }
+    ]
+  },
+
+  {
+    id: "af2",
+    title: "AlphaFold 2",
+    sub: "MSA, Evoformer, Structure Module e métricas de confiança",
+    requires: "af1",
+    items: [
+      {
+        type: "lesson",
+        title: "O salto de 2020",
+        html: `
+          <p>Em 2020, no desafio mundial <span class="keyword">CASP14</span>, o
+          <b>AlphaFold 2</b> (DeepMind) previu estruturas de proteínas com precisão
+          comparável à de experimentos de laboratório. Foi considerado a solução de um
+          problema de <b>50 anos</b>.</p>
+          <p>A entrada é simples: a <span class="keyword">sequência</span> de aminoácidos.
+          A saída é a <span class="keyword">estrutura 3D</span> prevista, com coordenadas de
+          cada átomo e uma medida de confiança para cada parte.</p>
+          <p>Nos próximos passos vamos abrir a "caixa-preta": como ele faz isso?</p>
+        `
+      },
+      {
+        type: "lesson",
+        title: "Pista nº1: evolução (o MSA)",
+        html: `
+          <p>O AlphaFold não olha só a sua proteína. Ele busca em bancos de dados muitas
+          proteínas <span class="keyword">parecidas</span> de outras espécies e as empilha
+          num <span class="keyword">MSA</span> (Multiple Sequence Alignment — alinhamento
+          múltiplo de sequências).</p>
+          <p>Por que isso ajuda? Por causa da <b>coevolução</b>. Se dois aminoácidos estão
+          em contato na forma 3D, a evolução tende a mudá-los <i>em conjunto</i>: se um muta,
+          o outro muta para "compensar" e manter o contato. Observando quais posições mutam
+          juntas ao longo das espécies, o modelo infere quais aminoácidos estão
+          <span class="keyword">próximos no espaço 3D</span> — mesmo estando longe na sequência.</p>
+          <div class="figure">
+          <svg viewBox="0 0 360 175" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MSA: duas colunas mudam juntas ao longo das espécies, indicando contato 3D">
+            <rect x="126" y="22" width="30" height="100" rx="6" fill="var(--accent)" opacity="0.16"/>
+            <rect x="186" y="22" width="30" height="100" rx="6" fill="var(--accent)" opacity="0.16"/>
+            <text x="62" y="46" text-anchor="end" font-size="11" fill="var(--text-dim)">espécie 1</text>
+            <text x="62" y="72" text-anchor="end" font-size="11" fill="var(--text-dim)">espécie 2</text>
+            <text x="62" y="98" text-anchor="end" font-size="11" fill="var(--text-dim)">espécie 3</text>
+            <text x="62" y="124" text-anchor="end" font-size="11" fill="var(--text-dim)">espécie 4</text>
+            <!-- row 0 -->
+            <rect x="70" y="30" width="22" height="20" rx="4" fill="var(--border)"/>
+            <rect x="100" y="30" width="22" height="20" rx="4" fill="var(--border)"/>
+            <rect x="130" y="30" width="22" height="20" rx="4" fill="#f85149"/>
+            <rect x="160" y="30" width="22" height="20" rx="4" fill="var(--border)"/>
+            <rect x="190" y="30" width="22" height="20" rx="4" fill="#f85149"/>
+            <rect x="220" y="30" width="22" height="20" rx="4" fill="var(--border)"/>
+            <!-- row 1 -->
+            <rect x="70" y="56" width="22" height="20" rx="4" fill="var(--border)"/>
+            <rect x="100" y="56" width="22" height="20" rx="4" fill="var(--border)"/>
+            <rect x="130" y="56" width="22" height="20" rx="4" fill="#4f8cff"/>
+            <rect x="160" y="56" width="22" height="20" rx="4" fill="var(--border)"/>
+            <rect x="190" y="56" width="22" height="20" rx="4" fill="#4f8cff"/>
+            <rect x="220" y="56" width="22" height="20" rx="4" fill="var(--border)"/>
+            <!-- row 2 -->
+            <rect x="70" y="82" width="22" height="20" rx="4" fill="var(--border)"/>
+            <rect x="100" y="82" width="22" height="20" rx="4" fill="var(--border)"/>
+            <rect x="130" y="82" width="22" height="20" rx="4" fill="#3fb950"/>
+            <rect x="160" y="82" width="22" height="20" rx="4" fill="var(--border)"/>
+            <rect x="190" y="82" width="22" height="20" rx="4" fill="#3fb950"/>
+            <rect x="220" y="82" width="22" height="20" rx="4" fill="var(--border)"/>
+            <!-- row 3 -->
+            <rect x="70" y="108" width="22" height="20" rx="4" fill="var(--border)"/>
+            <rect x="100" y="108" width="22" height="20" rx="4" fill="var(--border)"/>
+            <rect x="130" y="108" width="22" height="20" rx="4" fill="#7c5cff"/>
+            <rect x="160" y="108" width="22" height="20" rx="4" fill="var(--border)"/>
+            <rect x="190" y="108" width="22" height="20" rx="4" fill="#7c5cff"/>
+            <rect x="220" y="108" width="22" height="20" rx="4" fill="var(--border)"/>
+            <path d="M141,132 q30,26 60,0" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="4 3"/>
+            <text x="171" y="162" text-anchor="middle" font-size="12" font-weight="700" fill="var(--accent)">mudam juntas → em contato 3D</text>
+          </svg>
+          <div class="figcap">Cada linha é uma espécie; cada coluna, uma posição. As duas colunas destacadas variam de forma correlacionada.</div>
+          </div>
+          <div class="analogy"><b>Analogia:</b> é como descobrir que duas pessoas são um casal
+          observando que elas sempre faltam ao trabalho no mesmo dia. Você não as viu juntas,
+          mas o padrão correlacionado revela a ligação.</div>
+        `,
+        srs: { front: "Por que o AlphaFold usa um MSA (alinhamento de muitas sequências parecidas)?", back: "Para detectar coevolução: pares de posições que mutam juntas ao longo das espécies costumam estar em contato na estrutura 3D. Isso revela contatos espaciais a partir da estatística evolutiva." }
+      },
+      {
+        type: "quiz",
+        q: "O que a 'coevolução' observada no MSA indica sobre dois aminoácidos?",
+        options: [
+          "Que eles têm a mesma carga elétrica",
+          "Que eles provavelmente estão próximos (em contato) na estrutura 3D",
+          "Que eles aparecem no mesmo gene",
+          "Que eles são o mesmo aminoácido"
+        ],
+        answer: 1,
+        why: "Posições que mutam de forma correlacionada ao longo da evolução tendem a estar em contato físico na proteína dobrada — a mutação de uma é compensada pela outra."
+      },
+      {
+        type: "lesson",
+        title: "As duas 'memórias' do modelo",
+        html: `
+          <p>O AlphaFold 2 trabalha com duas representações internas que ele refina o tempo todo:</p>
+          <ul>
+            <li><b>Representação do MSA:</b> guarda a informação evolutiva (as sequências empilhadas).</li>
+            <li><b>Representação de pares (pair representation):</b> uma tabela com uma "ficha" para
+              <span class="keyword">cada par</span> de aminoácidos — o que o modelo acredita sobre a
+              relação entre eles (estão perto? em que orientação?).</li>
+          </ul>
+          <p>O truque genial é deixar essas duas representações <span class="keyword">conversarem</span>:
+          a informação evolutiva atualiza as relações entre pares, e as relações entre pares
+          reorganizam a leitura do MSA. Esse diálogo acontece no <b>Evoformer</b>.</p>
+        `
+      },
+      {
+        type: "diagram",
+        q: "O pipeline do AlphaFold 2 — clique em cada etapa para ver o que ela faz:",
+        nodes: [
+          { h: "1. Sequência de entrada", d: "Você fornece apenas a sequência de aminoácidos da proteína." },
+          { h: "2. Busca de MSA + templates", d: "O sistema procura sequências evolutivamente relacionadas (MSA) e estruturas conhecidas semelhantes (templates)." },
+          { h: "3. Evoformer (48 blocos)", d: "O coração do modelo. Faz a representação do MSA e a de pares conversarem por meio de atenção, incluindo a 'atenção triangular' que impõe consistência geométrica entre trios de aminoácidos." },
+          { h: "4. Structure Module", d: "Converte as representações abstratas em coordenadas 3D reais, usando Invariant Point Attention (IPA) e tratando cada resíduo como um 'referencial' (frame) que é girado e transladado." },
+          { h: "5. Recycling (reciclagem)", d: "A saída é realimentada na entrada e o processo se repete (~3x), refinando a previsão a cada passada." },
+          { h: "6. Estrutura 3D + confiança", d: "Saída final: coordenadas 3D de todos os átomos, mais as métricas pLDDT e PAE de confiança." }
+        ]
+      },
+      {
+        type: "order",
+        q: "Ordene as etapas do pipeline do AlphaFold 2:",
+        items: ["Receber a sequência de aminoácidos", "Construir o MSA (buscar sequências relacionadas)", "Processar no Evoformer", "Gerar coordenadas 3D no Structure Module", "Reciclar e refinar a previsão"],
+        why: "Sequência → MSA → Evoformer → Structure Module → reciclagem. A reciclagem realimenta o resultado para refinar."
+      },
+      {
+        type: "lesson",
+        title: "O Evoformer e a atenção triangular",
+        html: `
+          <p>O <span class="keyword">Evoformer</span> é uma pilha de 48 blocos baseados em
+          <b>atenção</b> (a mesma ideia dos Transformers). A inovação-chave é a
+          <span class="keyword">atenção triangular</span> sobre a representação de pares.</p>
+          <p>A ideia: distâncias entre aminoácidos precisam ser geometricamente consistentes.
+          Se sabemos a relação entre A–B e entre B–C, isso <i>restringe</i> a relação A–C
+          (como a desigualdade triangular). A atenção triangular força o modelo a respeitar
+          esses trios, tornando a previsão coerente no espaço.</p>
+          <div class="analogy"><b>Analogia:</b> se João mora a 1 km de Maria, e Maria a 1 km de
+          Ana, então João não pode estar a 100 km de Ana. O Evoformer aprende a usar essas
+          restrições entre trios.</div>
+        `,
+        srs: { front: "O que a 'atenção triangular' do Evoformer impõe?", back: "Consistência geométrica entre trios de aminoácidos: a relação entre dois pares restringe o terceiro (como a desigualdade triangular), tornando as distâncias previstas coerentes." }
+      },
+      {
+        type: "quiz",
+        q: "Qual é a função principal do Structure Module (depois do Evoformer)?",
+        options: [
+          "Buscar mais sequências para o MSA",
+          "Transformar as representações abstratas em coordenadas 3D reais dos átomos",
+          "Comprimir o modelo para rodar mais rápido",
+          "Medir a temperatura da proteína"
+        ],
+        answer: 1,
+        why: "O Structure Module converte as representações do Evoformer em uma estrutura 3D concreta, usando Invariant Point Attention e referenciais (frames) por resíduo."
+      },
+      {
+        type: "lesson",
+        title: "Confiança: pLDDT e PAE",
+        html: `
+          <p>O AlphaFold não só prevê a estrutura — ele diz <b>quanto confia</b> em cada parte.
+          Isso é essencial para usar os resultados com responsabilidade.</p>
+          <ul>
+            <li><b>pLDDT</b> (0–100): confiança <span class="keyword">por aminoácido</span>.
+              Acima de 90 = muito alta; 70–90 = confiável; 50–70 = baixa;
+              abaixo de 50 = muito baixa (frequentemente regiões <i>desordenadas</i>, sem forma fixa).</li>
+            <li><b>PAE</b> (Predicted Aligned Error): confiança na <span class="keyword">posição
+              relativa</span> entre diferentes partes/domínios. Útil para saber se a orientação
+              entre dois domínios é confiável.</li>
+          </ul>
+        `,
+        srs: { front: "O que mede o pLDDT no AlphaFold?", back: "A confiança por resíduo (0–100). >90 muito alta, 70–90 confiável, 50–70 baixa, <50 muito baixa (muitas vezes regiões desordenadas)." }
+      },
+      {
+        type: "plddt",
+        q: "Demonstração interativa: passe o mouse / toque em cada região para interpretar o pLDDT."
+      },
+      {
+        type: "fill",
+        q: "Complete a sigla: o MSA é um alinhamento ______ de sequências.",
+        accept: ["multiplo", "múltiplo", "multipla", "múltipla"],
+        hint: "Vem do 'M' de MSA (Multiple...).",
+        why: "MSA = Multiple Sequence Alignment = Alinhamento Múltiplo de Sequências."
+      },
+      {
+        type: "elaborate",
+        q: "Imagine que você precisa explicar para um colega por que o AlphaFold 2 é tão melhor que métodos antigos. Resuma em 2–3 frases as ideias centrais.",
+        model: "Ele combina informação evolutiva (MSA) — que revela contatos 3D a partir de mutações correlacionadas entre espécies — com uma arquitetura de atenção (Evoformer) que impõe consistência geométrica via atenção triangular. Depois converte tudo em coordenadas 3D no Structure Module e refina por reciclagem. E ainda informa a confiança (pLDDT/PAE) de cada parte, atingindo precisão próxima à experimental.",
+        srs: { front: "Quais são os 3 pilares que tornam o AlphaFold 2 poderoso?", back: "1) Informação evolutiva via MSA (coevolução → contatos); 2) Evoformer com atenção triangular (consistência geométrica); 3) Structure Module + reciclagem para gerar e refinar a 3D, com métricas de confiança." }
+      },
+      {
+        type: "flashcard",
+        front: "O que faz a 'reciclagem' (recycling) no AlphaFold 2?",
+        back: "Realimenta a saída do modelo de volta na entrada e repete o processamento (~3x), refinando a previsão a cada passada."
+      },
+      {
+        type: "quiz",
+        q: "Um aminoácido com pLDDT de 40. O que isso provavelmente significa?",
+        options: [
+          "Previsão muito confiável",
+          "A proteína tem 40 aminoácidos",
+          "Confiança muito baixa — pode ser uma região desordenada/sem forma fixa",
+          "A região é uma hélice-α perfeita"
+        ],
+        answer: 2,
+        why: "pLDDT < 50 indica baixíssima confiança. Muitas vezes corresponde a regiões intrinsecamente desordenadas, que de fato não têm uma estrutura única e estável."
+      }
+    ]
+  },
+
+  {
+    id: "af3",
+    title: "AlphaFold 3",
+    sub: "Difusão e previsão de complexos (ligantes, DNA, RNA)",
+    requires: "af2",
+    items: [
+      {
+        type: "lesson",
+        title: "Além das proteínas isoladas (2024)",
+        html: `
+          <p>O AlphaFold 2 previa principalmente <b>proteínas sozinhas</b>. Mas, na célula, proteínas
+          quase nunca trabalham isoladas: elas se ligam a <span class="keyword">remédios (ligantes)</span>,
+          a <span class="keyword">DNA e RNA</span>, a íons e a outras proteínas.</p>
+          <p>O <b>AlphaFold 3</b> (2024) deu o passo seguinte: prever a estrutura de
+          <span class="keyword">complexos biomoleculares</span> — vários tipos de molécula juntos,
+          num mesmo modelo.</p>
+          <div class="figure">
+          <svg viewBox="0 0 380 170" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="AlphaFold 3 prevê complexos: proteína com ligante e DNA">
+            <path d="M40,60 q25,-35 55,-12 q28,22 5,45 q-22,20 8,40 q25,15 45,-12" fill="none" stroke="var(--accent)" stroke-width="5" stroke-linecap="round"/>
+            <text x="85" y="150" text-anchor="middle" font-size="11" fill="var(--text-dim)">proteína</text>
+            <polygon points="190,55 205,47 220,55 220,72 205,80 190,72" fill="var(--gold)"/>
+            <text x="205" y="100" text-anchor="middle" font-size="11" fill="var(--text-dim)">ligante</text>
+            <path d="M270,30 q30,20 0,40 q-30,20 0,40 q30,20 0,40" fill="none" stroke="var(--accent-2)" stroke-width="3"/>
+            <path d="M310,30 q-30,20 0,40 q30,20 0,40 q-30,20 0,40" fill="none" stroke="var(--accent-2)" stroke-width="3"/>
+            <g stroke="var(--accent-2)" stroke-width="2">
+              <line x1="278" y1="42" x2="302" y2="42"/><line x1="278" y1="70" x2="302" y2="70"/>
+              <line x1="278" y1="98" x2="302" y2="98"/><line x1="278" y1="126" x2="302" y2="126"/>
+            </g>
+            <text x="290" y="150" text-anchor="middle" font-size="11" fill="var(--text-dim)">DNA / RNA</text>
+          </svg>
+          <div class="figcap">O AlphaFold 3 modela a proteína junto com ligantes, ácidos nucleicos (DNA/RNA) e íons.</div>
+          </div>
+        `
+      },
+      {
+        type: "quiz",
+        q: "O que o AlphaFold 3 consegue prever que o AlphaFold 2 não fazia bem?",
+        options: ["A sequência de aminoácidos", "Complexos: proteína com ligantes, DNA, RNA e íons", "A cor da proteína", "O preço de um medicamento"],
+        answer: 1,
+        why: "O grande avanço do AF3 é prever complexos biomoleculares — proteínas junto de ligantes e ácidos nucleicos — não apenas a proteína isolada."
+      },
+      {
+        type: "lesson",
+        title: "Uma nova ideia: difusão",
+        html: `
+          <p>O AF2 montava a estrutura com o Structure Module. O AF3 troca isso por um
+          <span class="keyword">modelo de difusão</span> — a mesma família de técnicas por trás dos
+          geradores de imagem que criam figuras a partir de ruído.</p>
+          <p>A ideia: começar de uma <b>nuvem de átomos aleatória</b> (puro ruído) e, passo a passo,
+          <span class="keyword">remover o ruído</span> até revelar a estrutura 3D coerente.</p>
+          <div class="figure">
+          <svg viewBox="0 0 440 155" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Difusão: do ruído à estrutura">
+            <g fill="var(--text-dim)">
+              <circle cx="30" cy="40" r="3"/><circle cx="55" cy="70" r="3"/><circle cx="40" cy="100" r="3"/>
+              <circle cx="72" cy="50" r="3"/><circle cx="85" cy="92" r="3"/><circle cx="60" cy="120" r="3"/>
+              <circle cx="25" cy="75" r="3"/><circle cx="92" cy="62" r="3"/>
+            </g>
+            <text x="58" y="145" text-anchor="middle" font-size="11" fill="var(--text-dim)">ruído aleatório</text>
+            <text x="135" y="82" text-anchor="middle" font-size="22" fill="var(--text-dim)">→</text>
+            <path d="M180,40 q20,-15 35,5 q15,18 -2,32 q-12,12 8,25" fill="none" stroke="var(--accent)" stroke-width="3" stroke-dasharray="5 5" opacity="0.75"/>
+            <g fill="var(--text-dim)"><circle cx="200" cy="115" r="2.5"/><circle cx="225" cy="100" r="2.5"/></g>
+            <text x="210" y="145" text-anchor="middle" font-size="11" fill="var(--text-dim)">parcialmente formado</text>
+            <text x="290" y="82" text-anchor="middle" font-size="22" fill="var(--text-dim)">→</text>
+            <path d="M330,40 q20,-15 35,5 q15,18 -2,32 q-12,12 8,25 q18,12 30,-8" fill="none" stroke="var(--accent-2)" stroke-width="4" stroke-linecap="round"/>
+            <text x="378" y="145" text-anchor="middle" font-size="11" fill="var(--text-dim)">estrutura final</text>
+          </svg>
+          <div class="figcap">Difusão: partindo do ruído, o modelo refina iterativamente até a estrutura final.</div>
+          </div>
+          <div class="analogy"><b>Analogia:</b> é como esculpir — você parte de um bloco "bagunçado"
+          e vai retirando material até a forma aparecer.</div>
+        `,
+        srs: { front: "Como o AlphaFold 3 gera a estrutura (diferente do AF2)?", back: "Por difusão: parte de uma nuvem de átomos aleatória (ruído) e remove o ruído passo a passo até revelar a estrutura 3D — em vez do Structure Module do AF2." }
+      },
+      {
+        type: "quiz",
+        q: "A 'difusão' no AlphaFold 3 funciona...",
+        options: ["...prevendo distâncias como no AF1", "...partindo de ruído e refinando até a estrutura final", "...cristalizando a proteína", "...sem usar nenhuma rede neural"],
+        answer: 1,
+        why: "O modelo de difusão começa de uma configuração aleatória de átomos e vai removendo ruído iterativamente até obter a estrutura coerente."
+      },
+      {
+        type: "lesson",
+        title: "Pairformer e o que mudou por dentro",
+        html: `
+          <p>O coração do AF2, o Evoformer, foi substituído por uma versão mais enxuta e eficiente,
+          o <span class="keyword">Pairformer</span>, que depende menos do MSA gigante e foca na
+          representação de pares. E o Structure Module deu lugar ao <b>módulo de difusão</b>.</p>
+          <p>O resultado é um modelo mais geral, capaz de tratar proteínas, ácidos nucleicos, íons e
+          pequenas moléculas com a mesma máquina.</p>
+        `
+      },
+      {
+        type: "order",
+        q: "Ordene o fluxo do AlphaFold 3:",
+        items: ["Receber as moléculas de entrada (proteína, DNA/RNA, ligantes...)", "Processar as representações no Pairformer", "Refinar por difusão (do ruído à estrutura)", "Obter o complexo 3D montado"],
+        why: "Entrada (várias moléculas) → Pairformer → módulo de difusão (do ruído à forma) → complexo 3D final."
+      },
+      {
+        type: "lesson",
+        title: "Por que isso importa (e os limites)",
+        html: `
+          <p>Prever <b>complexos</b> é enorme para a <span class="keyword">descoberta de medicamentos</span>:
+          muitos remédios são pequenas moléculas que se encaixam numa proteína. Ver esse encaixe
+          previsto acelera o desenho de fármacos.</p>
+          <p>Mas o AF3 não é mágico: ainda erra em regiões desordenadas, pode gerar
+          <span class="keyword">"alucinações"</span> plausíveis porém incorretas, tem dificuldade com
+          certos detalhes (como quiralidade e choques entre átomos) e entrega uma estrutura
+          <b>estática</b>, não o filme do movimento da molécula.</p>
+        `,
+        srs: { front: "Por que prever complexos (AF3) é importante para medicamentos?", back: "Muitos fármacos são pequenas moléculas (ligantes) que se encaixam numa proteína; prever esse encaixe acelera o desenho de remédios. (Mas o AF3 ainda erra em regiões desordenadas e dá estrutura estática.)" }
+      },
+      {
+        type: "elaborate",
+        q: "Imagine explicar a um amigo o que mudou do AlphaFold 2 para o 3. Resuma as 2 maiores mudanças.",
+        model: "Primeiro, o escopo: o AF2 previa proteínas isoladas; o AF3 prevê complexos — proteína junto de ligantes, DNA, RNA e íons. Segundo, a técnica: o AF3 troca o Structure Module por um modelo de difusão (parte do ruído e refina até a estrutura) e usa o Pairformer no lugar do Evoformer, dependendo menos do MSA.",
+        srs: { front: "Quais as 2 maiores mudanças do AF2 para o AF3?", back: "1) Escopo: de proteínas isoladas para complexos (ligantes, DNA/RNA, íons). 2) Técnica: difusão no lugar do Structure Module, e Pairformer no lugar do Evoformer." }
+      },
+      {
+        type: "flashcard",
+        front: "O que é o 'Pairformer' do AlphaFold 3?",
+        back: "A evolução mais enxuta do Evoformer: foca na representação de pares e depende menos do MSA gigante."
+      }
+    ]
+  },
+  {
+    id: "impacto",
+    title: "Impacto e Limitações",
+    sub: "AlphaFold DB, aplicações e o que ele NÃO faz",
+    requires: "af3",
+    items: [
+      {
+        type: "lesson",
+        title: "200 milhões de estruturas, de graça",
+        html: `
+          <p>A DeepMind e o EMBL-EBI criaram o <span class="keyword">AlphaFold DB</span>, um banco
+          público com as estruturas previstas de <b>mais de 200 milhões</b> de proteínas —
+          praticamente todas as proteínas conhecidas — disponível gratuitamente para qualquer
+          pesquisador.</p>
+          <p>Lembra do "abismo" entre sequências e estruturas? Em poucos anos, ele foi praticamente
+          preenchido.</p>
+          <div class="figure">
+          <svg viewBox="0 0 360 180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Salto no número de estruturas disponíveis">
+            <line x1="40" y1="150" x2="330" y2="150" stroke="var(--border)" stroke-width="2"/>
+            <rect x="80" y="143" width="70" height="7" rx="2" fill="var(--accent-2)"/>
+            <text x="115" y="133" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text)">~0,2 mi</text>
+            <text x="115" y="168" text-anchor="middle" font-size="11" fill="var(--text-dim)">antes (décadas)</text>
+            <rect x="220" y="28" width="70" height="122" rx="4" fill="var(--accent)"/>
+            <text x="255" y="22" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text)">200+ mi</text>
+            <text x="255" y="168" text-anchor="middle" font-size="11" fill="var(--text-dim)">AlphaFold DB</text>
+          </svg>
+          <div class="figcap">De cerca de 200 mil estruturas (acumuladas em décadas) para mais de 200 milhões.</div>
+          </div>
+        `,
+        srs: { front: "O que é o AlphaFold DB?", back: "Um banco público e gratuito (DeepMind + EMBL-EBI) com estruturas previstas de mais de 200 milhões de proteínas — quase todas as conhecidas." }
+      },
+      {
+        type: "quiz",
+        q: "Aproximadamente quantas estruturas o AlphaFold DB disponibilizou?",
+        options: ["Cerca de 200", "Cerca de 200 mil", "Mais de 200 milhões", "Exatamente 1 milhão"],
+        answer: 2,
+        why: "São mais de 200 milhões de estruturas previstas — cobrindo praticamente todo o universo de proteínas conhecidas."
+      },
+      {
+        type: "lesson",
+        title: "O que isso destravou",
+        html: `
+          <p>Acesso instantâneo à forma das proteínas acelerou áreas inteiras:</p>
+          <ul>
+            <li><b>Descoberta de medicamentos:</b> entender alvos e o encaixe de fármacos.</li>
+            <li><b>Design de enzimas:</b> criar proteínas para degradar plástico ou produzir
+            biocombustíveis.</li>
+            <li><b>Doenças negligenciadas:</b> estudar patógenos para os quais faltavam estruturas.</li>
+            <li><b>Biologia básica:</b> dar sentido a proteínas de função desconhecida.</li>
+          </ul>
+        `
+      },
+      {
+        type: "lesson",
+        title: "O Nobel de 2024",
+        html: `
+          <p>O impacto foi tão grande que, em <b>2024</b>, o <span class="keyword">Prêmio Nobel de
+          Química</span> reconheceu o campo: metade para <b>David Baker</b> (design computacional de
+          proteínas) e a outra metade para <b>Demis Hassabis</b> e <b>John Jumper</b>, da DeepMind,
+          pelo AlphaFold 2.</p>
+          <p>Foi uma das adoções mais rápidas de uma ferramenta de IA pela comunidade científica.</p>
+        `,
+        srs: { front: "Que reconhecimento o AlphaFold recebeu em 2024?", back: "O Prêmio Nobel de Química de 2024: metade a David Baker (design de proteínas) e metade a Demis Hassabis e John Jumper (AlphaFold 2)." }
+      },
+      {
+        type: "lesson",
+        title: "O que o AlphaFold NÃO faz",
+        html: `
+          <p>Para usar com responsabilidade, é essencial conhecer os limites:</p>
+          <ul>
+            <li><b>Não mostra movimento:</b> entrega uma forma <span class="keyword">estática</span>,
+            não o "filme" das mudanças de conformação (dinâmica).</li>
+            <li><b>Regiões desordenadas:</b> proteínas sem forma fixa têm previsões pouco confiáveis
+            (pLDDT baixo) — e isso é esperado.</li>
+            <li><b>Função e ligação:</b> não diz, por si só, o que a proteína faz nem com o que ela se
+            liga (embora o AF3 tenha avançado em complexos).</li>
+            <li><b>Mutações pontuais:</b> em geral não captura bem o efeito fino de trocar um único
+            aminoácido.</li>
+            <li><b>Depende do MSA:</b> proteínas "órfãs", com poucos parentes evolutivos, são mais
+            difíceis.</li>
+          </ul>
+        `,
+        srs: { front: "Cite 3 coisas que o AlphaFold NÃO faz bem.", back: "Forma estática (sem dinâmica/movimento); previsões fracas em regiões desordenadas; não prevê função/ligação por si só; efeito de mutações pontuais; depende de um bom MSA (proteínas órfãs são difíceis)." }
+      },
+      {
+        type: "quiz",
+        q: "Qual destas é uma limitação real do AlphaFold?",
+        options: ["Não roda em computadores", "Entrega uma forma estática, sem capturar a dinâmica/movimento", "Só funciona para humanos", "Precisa cristalizar a proteína antes"],
+        answer: 1,
+        why: "O AlphaFold prevê uma forma estática única; ele não modela o movimento nem o conjunto de conformações de uma proteína ao longo do tempo."
+      },
+      {
+        type: "plddt",
+        q: "Lembrete prático: o próprio pLDDT te avisa onde NÃO confiar. Explore as faixas de novo:"
+      },
+      {
+        type: "elaborate",
+        q: "Você recebe um modelo do AlphaFold de uma proteína. Em que situações você teria cautela antes de confiar nele?",
+        model: "Eu olharia primeiro a confiança: regiões com pLDDT baixo (<50–70) e PAE alto entre domínios são pouco confiáveis. Teria cautela se a proteína tem poucas sequências relacionadas (MSA raso), se há regiões intrinsecamente desordenadas, se eu preciso da dinâmica/movimento (e não só de uma foto estática), ou se quero saber função/ligação — coisas que o AlphaFold não entrega diretamente. Para decisões importantes, validaria com experimentos.",
+        srs: { front: "Quando ter cautela ao confiar num modelo do AlphaFold?", back: "Quando o pLDDT é baixo / PAE alto, o MSA é raso (proteína órfã), há regiões desordenadas, ou quando se precisa de dinâmica, função ou efeito de mutações — coisas que ele não entrega. Validar com experimentos quando crítico." }
+      },
+      {
+        type: "lesson",
+        title: "Juntando tudo 🧩",
+        html: `
+          <p>Você percorreu a história completa:</p>
+          <ul>
+            <li><b>Fundamentos:</b> sequência → forma → função.</li>
+            <li><b>O Problema:</b> espaço astronômico (Levinthal), métodos lentos, o abismo
+            sequência×estrutura e o CASP.</li>
+            <li><b>AlphaFold 1:</b> deep learning prevê distogramas (CASP13, 2018).</li>
+            <li><b>AlphaFold 2:</b> MSA + Evoformer (atenção triangular) + Structure Module,
+            end-to-end, com pLDDT/PAE — o salto de 2020.</li>
+            <li><b>AlphaFold 3:</b> difusão e complexos (ligantes, DNA, RNA) — 2024.</li>
+            <li><b>Impacto:</b> 200M+ estruturas, Nobel de 2024 — e limites importantes a respeitar.</li>
+          </ul>
+          <p>De uma sequência de letras a uma revolução na biologia. 🎉 Continue revisando seus cards
+          para que isso dure!</p>
+        `
+      },
+      {
+        type: "flashcard",
+        front: "Resuma o AlphaFold em uma frase.",
+        back: "Um sistema de IA que prevê a estrutura 3D de proteínas (e, no AF3, de complexos) a partir da sequência, com precisão próxima da experimental — preenchendo o abismo entre sequências e estruturas conhecidas."
+      }
+    ]
+  }
+];
+
+const BADGES = [
+  { id: "first-lesson", ico: "📖", name: "Primeira Lição", desc: "Concluiu seu primeiro item." },
+  { id: "fundamentos", ico: "🧬", name: "Bióloga(o) de Base", desc: "Concluiu Fundamentos Biológicos." },
+  { id: "af2", ico: "🧠", name: "Mestre do Evoformer", desc: "Concluiu AlphaFold 2." },
+  { id: "streak3", ico: "🔥", name: "Em Chamas", desc: "Streak de 3 dias." },
+  { id: "review10", ico: "♻️", name: "Revisor Dedicado", desc: "Concluiu 10 revisões espaçadas." },
+  { id: "perfect", ico: "🎯", name: "Sem Erros", desc: "Terminou um módulo sem errar nenhuma questão." },
+  { id: "af3", ico: "🌫️", name: "Domador da Difusão", desc: "Concluiu AlphaFold 3." },
+  { id: "trail", ico: "👑", name: "Mestre do AlphaFold", desc: "Concluiu toda a trilha." }
+];
+
+/* ----------------------------- ESTADO ------------------------------------ */
+const LS_KEY = "foldquest_v1";
+const todayStr = () => new Date().toISOString().slice(0, 10);
+
+const defaultState = () => ({
+  xp: 0,
+  streak: 0,
+  lastActive: null,
+  completed: {},          // moduleId -> array de índices de itens concluídos
+  badges: [],
+  srs: {},                // cardId -> { ef, reps, interval, due }
+  reviewCount: 0,
+  theme: "dark"
+});
+
+let state = load();
+
+function load() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) return Object.assign(defaultState(), JSON.parse(raw));
+  } catch (e) {}
+  return defaultState();
+}
+function save() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {} }
+
+/* Streak: atualiza ao abrir/atividade */
+function touchStreak() {
+  const t = todayStr();
+  if (state.lastActive === t) return;
+  const yesterday = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+  if (state.lastActive === yesterday) state.streak += 1;
+  else state.streak = 1;
+  state.lastActive = t;
+  if (state.streak >= 3) awardBadge("streak3", true);
+  save();
+}
+
+/* ----------------------------- XP / NÍVEIS ------------------------------- */
+function levelFromXp(xp) { return Math.floor(xp / 100) + 1; }
+function xpIntoLevel(xp) { return xp % 100; }
+
+function addXp(n) {
+  const before = levelFromXp(state.xp);
+  state.xp += n;
+  const after = levelFromXp(state.xp);
+  save();
+  renderTopBar();
+  if (after > before) toast(`🎉 Subiu para o Nível ${after}!`);
+}
+
+/* ----------------------------- BADGES ------------------------------------ */
+function awardBadge(id, silent) {
+  if (state.badges.includes(id)) return;
+  state.badges.push(id);
+  save();
+  const b = BADGES.find(x => x.id === id);
+  if (b && !silent) toast(`${b.ico} Conquista: ${b.name}`);
+}
+
+/* ----------------------------- SM-2 (repetição espaçada) ----------------- */
+/* quality: 0=again, 3=hard, 4=good, 5=easy */
+function scheduleCard(id, front, back, quality) {
+  let c = state.srs[id] || { ef: 2.5, reps: 0, interval: 0, front, back };
+  c.front = front; c.back = back;
+  if (quality < 3) {
+    c.reps = 0; c.interval = 1;
+  } else {
+    c.ef = Math.max(1.3, c.ef + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02)));
+    c.reps += 1;
+    if (c.reps === 1) c.interval = 1;
+    else if (c.reps === 2) c.interval = 3;
+    else c.interval = Math.round(c.interval * c.ef);
+  }
+  const due = new Date(Date.now() + c.interval * 864e5).toISOString().slice(0, 10);
+  c.due = due;
+  state.srs[id] = c;
+  save();
+}
+
+function registerCard(id, front, back) {
+  // adiciona um card novo (vence hoje) se ainda não existir
+  if (!state.srs[id]) {
+    state.srs[id] = { ef: 2.5, reps: 0, interval: 0, front, back, due: todayStr() };
+    save();
+  }
+}
+
+function dueCards() {
+  const t = todayStr();
+  return Object.entries(state.srs)
+    .filter(([id, c]) => c.due <= t)
+    .map(([id, c]) => ({ id, ...c }));
+}
+
+/* ----------------------------- HELPERS ----------------------------------- */
+const app = document.getElementById("app");
+const $ = sel => document.querySelector(sel);
+let toastTimer;
+function toast(msg) {
+  const el = $("#toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 2600);
+}
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function norm(s) { return (s || "").toLowerCase().trim().normalize("NFD").replace(/[̀-ͯ]/g, ""); }
+
+function moduleProgress(m) {
+  const total = m.items.length;
+  const done = (state.completed[m.id] || []).length;
+  return { done, total, pct: total ? Math.round(done / total * 100) : 0 };
+}
+function isModuleUnlocked(m) {
+  if (m.items.length === 0) return false;                 // ainda não construído
+  if ((state.completed[m.id] || []).length > 0) return true; // já iniciado: nunca re-trava
+  if (!m.requires) return true;                           // sem pré-requisito
+  const reqs = Array.isArray(m.requires) ? m.requires : [m.requires];
+  return reqs.every(id => {
+    const rm = MODULES.find(x => x.id === id);
+    const p = moduleProgress(rm);
+    return p.total > 0 && p.done >= p.total;              // pré-requisito 100% concluído
+  });
+}
+
+/* ----------------------------- TOP BAR ----------------------------------- */
+function renderTopBar() {
+  $("#s-streak").textContent = state.streak;
+  $("#s-xp").textContent = state.xp;
+  $("#s-level").textContent = "Nv " + levelFromXp(state.xp);
+  document.documentElement.setAttribute("data-theme", state.theme === "light" ? "light" : "dark");
+  $("#theme-btn").textContent = state.theme === "light" ? "☀️" : "🌙";
+}
+
+/* ----------------------------- HOME -------------------------------------- */
+function renderHome() {
+  touchStreak();
+  const due = dueCards();
+  let html = `
+    <div class="hero">
+      <h1>Domine o AlphaFold 🧬</h1>
+      <p>Trilha interativa com repetição espaçada para o conhecimento durar.</p>
+    </div>`;
+
+  if (due.length) {
+    html += `
+      <div class="review-banner" style="margin-top:20px">
+        <div class="big">♻️ ${due.length}</div>
+        <div style="flex:1">
+          <b>Revisão de hoje</b><br>
+          <span style="color:var(--text-dim);font-size:14px">${due.length} ${due.length === 1 ? "card vencendo" : "cards vencendo"}. Revisar agora fixa o que você aprendeu.</span>
+        </div>
+        <button class="btn" onclick="startReview()">Revisar</button>
+      </div>`;
+  }
+
+  html += `<div class="section-title">Trilha de aprendizagem</div><div class="grid">`;
+  MODULES.forEach((m, i) => {
+    const p = moduleProgress(m);
+    const unlocked = isModuleUnlocked(m);
+    const empty = m.items.length === 0;
+    html += `
+      <div class="module ${unlocked && !empty ? "" : "locked"}">
+        ${empty ? `<span class="badge-soon">Em breve</span>` : ""}
+        <div class="m-head">
+          <div class="m-num">${unlocked && !empty ? (i + 1) : "🔒"}</div>
+          <div>
+            <p class="m-title">${m.title}</p>
+            <p class="m-sub">${m.sub}</p>
+          </div>
+        </div>`;
+    if (unlocked && !empty) {
+      html += `
+        <div class="m-prog">
+          <div class="m-meta"><span>${p.done}/${p.total} concluídos</span><span>${p.pct}%</span></div>
+          <div class="xpbar"><div style="width:${p.pct}%"></div></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn" onclick="startModule('${m.id}')">${p.done === 0 ? "Começar" : (p.done >= p.total ? "Revisar módulo" : "Continuar")}</button>
+        </div>`;
+    } else if (empty) {
+      html += `<div class="m-prog"><p class="m-sub" style="margin-top:10px">Conteúdo planejado — estrutura pronta para ser adicionada.</p></div>`;
+    } else {
+      html += `<div class="m-prog"><p class="m-sub" style="margin-top:10px">🔒 Complete os módulos anteriores para desbloquear.</p></div>`;
+    }
+    html += `</div>`;
+  });
+  html += `</div>`;
+
+  // Badges
+  html += `<div class="section-title">Conquistas</div><div class="badges">`;
+  BADGES.forEach(b => {
+    const got = state.badges.includes(b.id);
+    html += `<div class="badge ${got ? "" : "locked"}" title="${b.desc}">
+      <span class="ico">${b.ico}</span>
+      <div><div style="font-weight:700;font-size:13px">${b.name}</div>
+      <div style="font-size:11px;color:var(--text-dim)">${b.desc}</div></div></div>`;
+  });
+  html += `</div>`;
+
+  html += `<p class="footnote">FoldQuest • progresso salvo automaticamente no seu navegador • feito para aprender de verdade</p>`;
+
+  app.innerHTML = html;
+  window.scrollTo(0, 0);
+}
+
+/* ----------------------------- RUN DE MÓDULO ----------------------------- */
+let run = null; // { module, index, errors }
+
+function startModule(id) {
+  const m = MODULES.find(x => x.id === id);
+  if (!m || m.items.length === 0) return;
+  const doneArr = state.completed[m.id] || [];
+  let start = 0;
+  // continua do primeiro item não concluído
+  for (let i = 0; i < m.items.length; i++) { if (!doneArr.includes(i)) { start = i; break; } if (i === m.items.length - 1) start = 0; }
+  run = { module: m, index: start, errors: 0, answeredWrongHere: false };
+  renderItem();
+}
+
+function runbarHtml() {
+  const m = run.module;
+  let s = `<div class="runbar">`;
+  m.items.forEach((it, i) => {
+    let cls = i < run.index ? "done" : (i === run.index ? "cur" : "");
+    s += `<div class="seg ${cls}"></div>`;
+  });
+  return s + `</div>`;
+}
+
+function crumbsHtml() {
+  return `<div class="crumbs"><a onclick="renderHome()">🏠 Início</a> › <span>${run.module.title}</span> › <span>${run.index + 1}/${run.module.items.length}</span></div>`;
+}
+
+function markItemDone() {
+  const id = run.module.id;
+  state.completed[id] = state.completed[id] || [];
+  if (!state.completed[id].includes(run.index)) {
+    state.completed[id].push(run.index);
+    awardBadge("first-lesson");
+  }
+  save();
+}
+
+function nextItem() {
+  markItemDone();
+  // registra card de repetição espaçada se houver
+  const it = run.module.items[run.index];
+  if (it.srs) registerCard(run.module.id + ":" + run.index, it.srs.front, it.srs.back);
+  if (it.type === "flashcard") registerCard(run.module.id + ":" + run.index, it.front, it.back);
+
+  if (run.index < run.module.items.length - 1) {
+    run.index++;
+    renderItem();
+  } else {
+    finishModule();
+  }
+}
+
+function finishModule() {
+  const m = run.module;
+  // garante todos marcados
+  state.completed[m.id] = m.items.map((_, i) => i);
+  if (m.id === "fundamentos") awardBadge("fundamentos");
+  if (m.id === "af2") awardBadge("af2");
+  if (m.id === "af3") awardBadge("af3");
+  if (m.id === "impacto") awardBadge("trail");
+  if (run.errors === 0) awardBadge("perfect");
+  save();
+
+  app.innerHTML = `
+    ${crumbsHtml()}
+    <div class="panel done-screen">
+      <div class="trophy">🏆</div>
+      <h2>Módulo concluído!</h2>
+      <p style="color:var(--text-dim)">${m.title}</p>
+      <p class="xp-pop">+${m.items.length * 10} XP</p>
+      <p style="color:var(--text-dim);font-size:14px">${run.errors === 0 ? "Perfeito — nenhum erro! 🎯" : "Erros nesta passagem: " + run.errors + ". Os cards de revisão vão te ajudar a fixar."}</p>
+      <div class="btn-row" style="justify-content:center">
+        <button class="btn" onclick="renderHome()">Voltar à trilha</button>
+        ${dueCards().length ? `<button class="btn ghost" onclick="startReview()">Revisar cards (${dueCards().length})</button>` : ""}
+      </div>
+    </div>`;
+  addXp(m.items.length * 10);
+  window.scrollTo(0, 0);
+}
+
+/* ----------------------------- RENDER POR TIPO --------------------------- */
+function renderItem() {
+  const it = run.module.items[run.index];
+  let body = "";
+  switch (it.type) {
+    case "lesson": body = renderLesson(it); break;
+    case "quiz": body = renderQuiz(it); break;
+    case "fill": body = renderFill(it); break;
+    case "order": body = renderOrder(it); break;
+    case "elaborate": body = renderElaborate(it); break;
+    case "flashcard": body = renderFlashLearn(it); break;
+    case "diagram": body = renderDiagram(it); break;
+    case "plddt": body = renderPlddt(it); break;
+  }
+  app.innerHTML = crumbsHtml() + runbarHtml() + `<div class="panel">${body}</div>`;
+  window.scrollTo(0, 0);
+  if (it.type === "order") initDrag();
+}
+
+function renderLesson(it) {
+  return `<div class="lesson"><h2>${it.title}</h2>${it.html}
+    <div class="btn-row"><button class="btn" onclick="nextItem()">Continuar →</button></div></div>`;
+}
+
+function renderQuiz(it) {
+  const opts = it.options.map((o, i) =>
+    `<button class="opt" data-i="${i}" onclick="answerQuiz(this, ${i}, ${it.answer})">${o}</button>`).join("");
+  return `<div class="q-text">${it.q}</div>${opts}
+    <div class="feedback" id="fb"><b id="fbt"></b><span id="fbw"></span></div>
+    <div class="btn-row" id="nextrow" style="display:none"><button class="btn" onclick="nextItem()">Continuar →</button></div>`;
+}
+function answerQuiz(btn, i, ans) {
+  document.querySelectorAll(".opt").forEach(o => o.disabled = true);
+  const it = run.module.items[run.index];
+  const fb = $("#fb");
+  if (i === ans) {
+    btn.classList.add("correct");
+    fb.className = "feedback show ok"; $("#fbt").textContent = "✅ Correto!";
+    addXp(10);
+  } else {
+    btn.classList.add("wrong");
+    document.querySelector(`.opt[data-i="${ans}"]`).classList.add("correct");
+    fb.className = "feedback show no"; $("#fbt").textContent = "❌ Não exatamente.";
+    run.errors++;
+  }
+  $("#fbw").textContent = it.why;
+  $("#nextrow").style.display = "flex";
+}
+
+function renderFill(it) {
+  return `<div class="q-text">${it.q}</div>
+    <div class="fill">
+      <input id="fillin" type="text" placeholder="Digite sua resposta..." autocomplete="off"
+        onkeydown="if(event.key==='Enter')checkFill()">
+      <div class="hint">💡 ${it.hint}</div>
+    </div>
+    <div class="feedback" id="fb"><b id="fbt"></b><span id="fbw"></span></div>
+    <div class="btn-row"><button class="btn" id="checkbtn" onclick="checkFill()">Verificar</button>
+      <button class="btn" id="nextbtn" style="display:none" onclick="nextItem()">Continuar →</button></div>`;
+}
+function checkFill() {
+  const it = run.module.items[run.index];
+  const val = norm($("#fillin").value);
+  const ok = it.accept.some(a => norm(a) === val);
+  const fb = $("#fb");
+  $("#fillin").disabled = true;
+  $("#checkbtn").style.display = "none";
+  $("#nextbtn").style.display = "inline-block";
+  if (ok) { fb.className = "feedback show ok"; $("#fbt").textContent = "✅ Correto!"; addXp(10); }
+  else { fb.className = "feedback show no"; $("#fbt").textContent = `❌ Resposta esperada: "${it.accept[0]}"`; run.errors++; }
+  $("#fbw").textContent = it.why;
+}
+
+function renderOrder(it) {
+  const shuffled = shuffle(it.items.map((t, i) => ({ t, i })));
+  // evita ordem já correta
+  const lis = shuffled.map(o =>
+    `<li class="order-item" draggable="true" data-i="${o.i}"><span class="grip">⠿</span><span class="num">?</span><span>${o.t}</span></li>`).join("");
+  return `<div class="q-text">${it.q}</div>
+    <ul class="order-list" id="orderlist">${lis}</ul>
+    <div class="feedback" id="fb"><b id="fbt"></b><span id="fbw"></span></div>
+    <div class="btn-row"><button class="btn" id="checkbtn" onclick="checkOrder()">Verificar ordem</button>
+      <button class="btn" id="nextbtn" style="display:none" onclick="nextItem()">Continuar →</button></div>`;
+}
+let dragEl = null;
+function initDrag() {
+  const list = $("#orderlist");
+  list.querySelectorAll(".order-item").forEach(li => {
+    li.addEventListener("dragstart", () => { dragEl = li; li.classList.add("dragging"); });
+    li.addEventListener("dragend", () => { li.classList.remove("dragging"); renumber(); });
+  });
+  list.addEventListener("dragover", e => {
+    e.preventDefault();
+    const after = getDragAfter(list, e.clientY);
+    if (after == null) list.appendChild(dragEl);
+    else list.insertBefore(dragEl, after);
+  });
+  // suporte a toque: clique move o item para baixo
+  list.querySelectorAll(".order-item").forEach(li => {
+    li.addEventListener("click", () => {
+      const next = li.nextElementSibling;
+      if (next) list.insertBefore(next, li); else list.insertBefore(li, list.firstElementChild);
+      renumber();
+    });
+  });
+  renumber();
+}
+function renumber() {
+  $("#orderlist").querySelectorAll(".order-item").forEach((li, idx) => {
+    li.querySelector(".num").textContent = idx + 1;
+  });
+}
+function getDragAfter(list, y) {
+  const els = [...list.querySelectorAll(".order-item:not(.dragging)")];
+  return els.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    if (offset < 0 && offset > closest.offset) return { offset, element: child };
+    return closest;
+  }, { offset: -Infinity }).element || null;
+}
+function checkOrder() {
+  const order = [...$("#orderlist").querySelectorAll(".order-item")].map(li => +li.dataset.i);
+  const correct = order.every((v, idx) => v === idx);
+  const it = run.module.items[run.index];
+  const fb = $("#fb");
+  $("#checkbtn").style.display = "none";
+  $("#nextbtn").style.display = "inline-block";
+  $("#orderlist").querySelectorAll(".order-item").forEach(li => li.style.cursor = "default");
+  if (correct) { fb.className = "feedback show ok"; $("#fbt").textContent = "✅ Ordem correta!"; addXp(10); }
+  else {
+    fb.className = "feedback show no"; $("#fbt").textContent = "❌ Ordem incorreta. A sequência certa é:";
+    run.errors++;
+    // mostra a correta
+    const ol = $("#orderlist"); ol.innerHTML = it.items.map((t, i) =>
+      `<li class="order-item" style="cursor:default"><span class="num">${i + 1}</span><span>${t}</span></li>`).join("");
+  }
+  $("#fbw").textContent = it.why;
+}
+
+function renderElaborate(it) {
+  return `<div class="q-text">✍️ ${it.q}</div>
+    <p class="hint" style="margin-top:-8px">Escreva com suas palavras. Depois compare com a resposta-modelo (autoavaliação — a elaboração ativa fixa o aprendizado).</p>
+    <textarea class="elab" id="elab" placeholder="Sua explicação..."></textarea>
+    <div class="model-answer" id="model" style="display:none">
+      <b>💡 Resposta-modelo:</b><br>${it.model}
+    </div>
+    <div class="btn-row">
+      <button class="btn ghost" id="revealbtn" onclick="revealModel()">Mostrar resposta-modelo</button>
+      <button class="btn" id="nextbtn" style="display:none" onclick="nextItem()">Continuar →</button>
+    </div>`;
+}
+function revealModel() {
+  if ($("#elab").value.trim().length < 5) { toast("Tente escrever algo primeiro 🙂"); return; }
+  $("#model").style.display = "block";
+  $("#revealbtn").style.display = "none";
+  $("#nextbtn").style.display = "inline-block";
+  addXp(10);
+}
+
+function renderFlashLearn(it) {
+  return `<div class="q-text">🃏 Flashcard</div>
+    <p class="hint" style="margin-top:-8px">Tente lembrar a resposta antes de virar. Este card entra na sua revisão espaçada.</p>
+    <div class="flash" id="flash" onclick="this.classList.toggle('flipped')">
+      <div class="flash-inner">
+        <div class="flash-face front"><span class="tag">Pergunta — clique para virar</span><div>${it.front}</div></div>
+        <div class="flash-face back"><span class="tag">Resposta</span><div>${it.back}</div></div>
+      </div>
+    </div>
+    <div class="btn-row"><button class="btn" onclick="addXp(5);nextItem()">Entendi, continuar →</button></div>`;
+}
+
+function renderDiagram(it) {
+  let nodes = "";
+  it.nodes.forEach((n, i) => {
+    nodes += `<div class="diag-node" onclick="this.classList.toggle('active')">
+      <h4>${n.h}</h4><div class="desc">${n.d}</div></div>`;
+    if (i < it.nodes.length - 1) nodes += `<div class="diag-arrow">↓</div>`;
+  });
+  return `<div class="q-text">${it.q}</div>
+    <div class="diagram">${nodes}</div>
+    <div class="btn-row"><button class="btn" onclick="addXp(10);nextItem()">Continuar →</button></div>`;
+}
+
+function renderPlddt(it) {
+  // 5 regiões com cores e interpretações
+  const regs = [
+    { c: "#0053D6", t: "Muito alta (>90)", d: "Região muito confiável — provavelmente um núcleo bem estruturado (ex.: hélice ou folha estável)." },
+    { c: "#65CBF3", t: "Confiável (70–90)", d: "Boa confiança. A espinha dorsal está bem prevista, embora detalhes possam variar." },
+    { c: "#FFDB13", t: "Baixa (50–70)", d: "Confiança limitada — interprete com cautela." },
+    { c: "#FF7D45", t: "Muito baixa (<50)", d: "Pouca confiança. Frequentemente uma região intrinsecamente desordenada, sem forma fixa." },
+    { c: "#65CBF3", t: "Confiável (70–90)", d: "Volta a uma região estruturada e confiável." }
+  ];
+  const segs = regs.map((r, i) =>
+    `<div class="plddt-seg" style="background:${r.c}" onmouseover="plddtShow(${i})" onclick="plddtShow(${i})"></div>`).join("");
+  return `<div class="q-text">${it.q}</div>
+    <div class="plddt-demo">
+      <div class="plddt-track">${segs}</div>
+      <div class="plddt-readout" id="plddtout">👆 Passe o mouse ou toque numa faixa da "proteína".</div>
+      <div class="plddt-legend">
+        <span><i style="background:#0053D6"></i>Muito alta</span>
+        <span><i style="background:#65CBF3"></i>Confiável</span>
+        <span><i style="background:#FFDB13"></i>Baixa</span>
+        <span><i style="background:#FF7D45"></i>Muito baixa</span>
+      </div>
+    </div>
+    <p class="hint">Estas são exatamente as faixas de cor que o AlphaFold usa para colorir as estruturas pelo pLDDT.</p>
+    <div class="btn-row"><button class="btn" onclick="addXp(10);nextItem()">Continuar →</button></div>`;
+}
+const PLDDT_REGS = [
+  "Muito alta (>90): região muito confiável — provavelmente um núcleo bem estruturado.",
+  "Confiável (70–90): boa confiança; a espinha dorsal está bem prevista.",
+  "Baixa (50–70): confiança limitada — interprete com cautela.",
+  "Muito baixa (<50): pouca confiança; muitas vezes uma região desordenada, sem forma fixa.",
+  "Confiável (70–90): de volta a uma região estruturada e confiável."
+];
+function plddtShow(i) { const el = $("#plddtout"); if (el) el.textContent = PLDDT_REGS[i]; }
+
+/* ----------------------------- REVISÃO (SM-2) ---------------------------- */
+let review = null; // { cards: [...], index }
+function startReview() {
+  const cards = shuffle(dueCards()); // interleaving: mistura cards de módulos diferentes
+  if (!cards.length) { toast("Nenhum card para revisar agora 🎉"); renderHome(); return; }
+  review = { cards, index: 0 };
+  renderReviewCard();
+}
+function renderReviewCard() {
+  const c = review.cards[review.index];
+  app.innerHTML = `
+    <div class="crumbs"><a onclick="renderHome()">🏠 Início</a> › <span>Revisão espaçada</span> › <span>${review.index + 1}/${review.cards.length}</span></div>
+    <div class="runbar">${review.cards.map((_, i) => `<div class="seg ${i < review.index ? "done" : (i === review.index ? "cur" : "")}"></div>`).join("")}</div>
+    <div class="panel">
+      <div class="q-text">♻️ Recordação ativa</div>
+      <p class="hint" style="margin-top:-8px">Tente responder de memória. Depois vire e avalie honestamente — isso calibra quando o card volta.</p>
+      <div class="flash" id="flash" onclick="this.classList.toggle('flipped');document.getElementById('srsrow').style.display='flex';">
+        <div class="flash-inner">
+          <div class="flash-face front"><span class="tag">Pergunta — clique para revelar</span><div>${c.front}</div></div>
+          <div class="flash-face back"><span class="tag">Resposta</span><div>${c.back}</div></div>
+        </div>
+      </div>
+      <div class="srs-row" id="srsrow" style="display:none">
+        <button class="btn srs-again" onclick="gradeCard(0)">Errei</button>
+        <button class="btn srs-hard" onclick="gradeCard(3)">Difícil</button>
+        <button class="btn srs-good" onclick="gradeCard(4)">Bom</button>
+        <button class="btn srs-easy" onclick="gradeCard(5)">Fácil</button>
+      </div>
+    </div>`;
+  window.scrollTo(0, 0);
+}
+function gradeCard(q) {
+  const c = review.cards[review.index];
+  scheduleCard(c.id, c.front, c.back, q);
+  state.reviewCount++;
+  if (state.reviewCount >= 10) awardBadge("review10");
+  if (q >= 3) addXp(5);
+  save();
+  if (review.index < review.cards.length - 1) { review.index++; renderReviewCard(); }
+  else {
+    app.innerHTML = `<div class="panel done-screen">
+      <div class="trophy">♻️</div><h2>Revisão concluída!</h2>
+      <p style="color:var(--text-dim)">Você revisou ${review.cards.length} ${review.cards.length === 1 ? "card" : "cards"}. Cada um voltará no momento ideal para não esquecer.</p>
+      <div class="btn-row" style="justify-content:center"><button class="btn" onclick="renderHome()">Voltar</button></div>
+    </div>`;
+    window.scrollTo(0, 0);
+  }
+}
+
+/* ----------------------------- TEMA -------------------------------------- */
+$("#theme-btn").addEventListener("click", () => {
+  state.theme = state.theme === "light" ? "dark" : "light";
+  save(); renderTopBar();
+});
+
+/* ----------------------------- INIT -------------------------------------- */
+renderTopBar();
+renderHome();
+</script>
+</body>
+</html>
