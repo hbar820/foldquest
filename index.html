@@ -1157,6 +1157,58 @@ const MODULES_PT = [
       },
       {
         type: "lesson",
+        title: "AlphaFold na sua carreira",
+        html: `
+          <p>Você não precisa virar especialista em IA para se beneficiar disso. Muitas profissões
+          já usam o AlphaFold — cada uma do seu jeito:</p>
+          <div class="figure">
+          <svg viewBox="0 0 460 285" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Profissões que usam o AlphaFold, todas conectadas às proteínas">
+            <g stroke="var(--border)" stroke-width="2">
+              <line x1="230" y1="142" x2="85" y2="40"/>
+              <line x1="230" y1="142" x2="230" y2="40"/>
+              <line x1="230" y1="142" x2="375" y2="40"/>
+              <line x1="230" y1="142" x2="85" y2="244"/>
+              <line x1="230" y1="142" x2="230" y2="244"/>
+              <line x1="230" y1="142" x2="375" y2="244"/>
+            </g>
+            <circle cx="230" cy="142" r="46" fill="var(--accent)"/>
+            <text x="230" y="138" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">Proteína</text>
+            <text x="230" y="156" text-anchor="middle" font-size="11" fill="#e6edf3">(forma 3D)</text>
+            <g>
+              <rect x="20" y="23" width="130" height="34" rx="8" fill="var(--bg-soft)" stroke="var(--accent-2)" stroke-width="1.5"/>
+              <rect x="165" y="23" width="130" height="34" rx="8" fill="var(--bg-soft)" stroke="var(--accent-2)" stroke-width="1.5"/>
+              <rect x="310" y="23" width="130" height="34" rx="8" fill="var(--bg-soft)" stroke="var(--accent-2)" stroke-width="1.5"/>
+              <rect x="20" y="227" width="130" height="34" rx="8" fill="var(--bg-soft)" stroke="var(--accent-2)" stroke-width="1.5"/>
+              <rect x="165" y="227" width="130" height="34" rx="8" fill="var(--bg-soft)" stroke="var(--accent-2)" stroke-width="1.5"/>
+              <rect x="310" y="227" width="130" height="34" rx="8" fill="var(--bg-soft)" stroke="var(--accent-2)" stroke-width="1.5"/>
+            </g>
+            <g font-size="12" font-weight="700" fill="var(--text)" text-anchor="middle">
+              <text x="85" y="44">Farmácia</text>
+              <text x="230" y="44">Eng. Química</text>
+              <text x="375" y="44">Medicina</text>
+              <text x="85" y="248">Biotecnologia</text>
+              <text x="230" y="248">Agronomia</text>
+              <text x="375" y="248">Computação/IA</text>
+            </g>
+          </svg>
+          <div class="figcap">Quase toda carreira aqui gira em torno de uma coisa: proteínas.</div>
+          </div>
+          <ul>
+            <li>💊 <b>Farmácia:</b> ver o alvo em 3D e desenhar o remédio que encaixa nele. Acelera a descoberta de fármacos.</li>
+            <li>⚗️ <b>Engenharia Química:</b> projetar e otimizar <span class="keyword">enzimas</span> para processos industriais mais limpos — biocombustíveis, reciclagem de plástico.</li>
+            <li>🩺 <b>Medicina:</b> entender como mutações causam doenças e estudar patógenos — base para novas terapias e diagnósticos.</li>
+            <li>🧪 <b>Biotecnologia:</b> criar proteínas e enzimas novas para indústria, materiais e saúde.</li>
+            <li>🌱 <b>Agronomia:</b> estudar proteínas de plantas e pragas para cultivos mais resistentes.</li>
+            <li>💻 <b>Computação / IA:</b> construir e melhorar os próprios modelos de previsão.</li>
+          </ul>
+          <div class="analogy"><b>Repare no padrão:</b> escolher entre Farmácia e Engenharia Química,
+          por exemplo, é menos sobre "qual é melhor" e mais sobre qual lado da mesma molécula te
+          empolga — o <b>remédio que cura</b> ou o <b>processo que o produz</b>.</div>
+        `,
+        srs: { front: "Como Farmácia e Engenharia Química se conectam pelo AlphaFold?", back: "Ambas giram em torno de proteínas: a Farmácia as usa como alvo dos remédios (a 'chave' que encaixa); a Engenharia Química as usa como ferramentas (enzimas em processos industriais). O AlphaFold dá a forma 3D que os dois lados precisam." }
+      },
+      {
+        type: "lesson",
         title: "Juntando tudo 🧩",
         html: `
           <p>Você percorreu a história completa:</p>
@@ -2027,6 +2079,58 @@ const MODULES_EN = [
         q: "You receive an AlphaFold model of a protein. In which situations would you be cautious before trusting it?",
         model: "I'd first look at the confidence: regions with low pLDDT (<50–70) and high PAE between domains are unreliable. I'd be cautious if the protein has few related sequences (a shallow MSA), if there are intrinsically disordered regions, if I need the dynamics/motion (and not just a static snapshot), or if I want function/binding — things AlphaFold doesn't deliver directly. For important decisions, I'd validate with experiments.",
         srs: { front: "When should you be cautious about trusting an AlphaFold model?", back: "When pLDDT is low / PAE is high, the MSA is shallow (orphan protein), there are disordered regions, or when you need dynamics, function or mutation effects — things it doesn't deliver. Validate with experiments when critical." }
+      },
+      {
+        type: "lesson",
+        title: "AlphaFold in your career",
+        html: `
+          <p>You don't need to become an AI expert to benefit from this. Many careers already use
+          AlphaFold — each in its own way:</p>
+          <div class="figure">
+          <svg viewBox="0 0 460 285" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Careers that use AlphaFold, all connected to proteins">
+            <g stroke="var(--border)" stroke-width="2">
+              <line x1="230" y1="142" x2="85" y2="40"/>
+              <line x1="230" y1="142" x2="230" y2="40"/>
+              <line x1="230" y1="142" x2="375" y2="40"/>
+              <line x1="230" y1="142" x2="85" y2="244"/>
+              <line x1="230" y1="142" x2="230" y2="244"/>
+              <line x1="230" y1="142" x2="375" y2="244"/>
+            </g>
+            <circle cx="230" cy="142" r="46" fill="var(--accent)"/>
+            <text x="230" y="138" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">Protein</text>
+            <text x="230" y="156" text-anchor="middle" font-size="11" fill="#e6edf3">(3D shape)</text>
+            <g>
+              <rect x="20" y="23" width="130" height="34" rx="8" fill="var(--bg-soft)" stroke="var(--accent-2)" stroke-width="1.5"/>
+              <rect x="165" y="23" width="130" height="34" rx="8" fill="var(--bg-soft)" stroke="var(--accent-2)" stroke-width="1.5"/>
+              <rect x="310" y="23" width="130" height="34" rx="8" fill="var(--bg-soft)" stroke="var(--accent-2)" stroke-width="1.5"/>
+              <rect x="20" y="227" width="130" height="34" rx="8" fill="var(--bg-soft)" stroke="var(--accent-2)" stroke-width="1.5"/>
+              <rect x="165" y="227" width="130" height="34" rx="8" fill="var(--bg-soft)" stroke="var(--accent-2)" stroke-width="1.5"/>
+              <rect x="310" y="227" width="130" height="34" rx="8" fill="var(--bg-soft)" stroke="var(--accent-2)" stroke-width="1.5"/>
+            </g>
+            <g font-size="12" font-weight="700" fill="var(--text)" text-anchor="middle">
+              <text x="85" y="44">Pharmacy</text>
+              <text x="230" y="44">Chemical Eng.</text>
+              <text x="375" y="44">Medicine</text>
+              <text x="85" y="248">Biotechnology</text>
+              <text x="230" y="248">Agriculture</text>
+              <text x="375" y="248">Computer Sci./AI</text>
+            </g>
+          </svg>
+          <div class="figcap">Almost every career here revolves around one thing: proteins.</div>
+          </div>
+          <ul>
+            <li>💊 <b>Pharmacy:</b> see the target in 3D and design the drug that fits it. Speeds up drug discovery.</li>
+            <li>⚗️ <b>Chemical Engineering:</b> design and optimize <span class="keyword">enzymes</span> for cleaner industrial processes — biofuels, plastic recycling.</li>
+            <li>🩺 <b>Medicine:</b> understand how mutations cause disease and study pathogens — the basis for new therapies and diagnostics.</li>
+            <li>🧪 <b>Biotechnology:</b> create new proteins and enzymes for industry, materials and health.</li>
+            <li>🌱 <b>Agriculture:</b> study plant and pest proteins for more resilient crops.</li>
+            <li>💻 <b>Computer Science / AI:</b> build and improve the prediction models themselves.</li>
+          </ul>
+          <div class="analogy"><b>Notice the pattern:</b> choosing between Pharmacy and Chemical
+          Engineering, for example, is less about "which is better" and more about which side of the
+          same molecule excites you — the <b>drug that cures</b> or the <b>process that makes it</b>.</div>
+        `,
+        srs: { front: "How do Pharmacy and Chemical Engineering connect through AlphaFold?", back: "Both revolve around proteins: Pharmacy uses them as drug targets (the 'key' that fits); Chemical Engineering uses them as tools (enzymes in industrial processes). AlphaFold provides the 3D shape both sides need." }
       },
       {
         type: "lesson",
